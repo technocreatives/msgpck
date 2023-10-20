@@ -1,0 +1,13 @@
+[package]
+name = "msgpackers"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rmp = { version = "0.8.12", default-features = false }
+msgpackers_derive = { path = "../msgpackers_derive" }
+rmp-serde = "1.1.2"
+serde = { version = "1.0.189", features = ["derive"] }
+embedded-io-async = "0.6.0"

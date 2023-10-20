@@ -1,0 +1,7 @@
+[workspace]
+members = [
+	"msgpackers",
+	"msgpackers_derive",
+]
+
+resolver = "2"
