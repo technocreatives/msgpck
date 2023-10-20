@@ -1,11 +1,11 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Foo {
     pub bar: Bar,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Bar {
     pub a: u8,
     pub b: u16,
@@ -23,6 +23,9 @@ fn main() {
 
     println!("{foo:x?}");
 
-    let bytes = rmp_serde::to_vec(&foo);
+    let bytes = rmp_serde::to_vec(&foo).unwrap();
     println!("{bytes:x?}");
+
+    let decoded: Foo = rmp_serde::from_slice(&bytes).unwrap();
+    println!("{decoded:x?}");
 }

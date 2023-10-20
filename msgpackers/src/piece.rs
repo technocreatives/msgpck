@@ -38,6 +38,12 @@ impl From<Marker> for Piece<'static> {
     }
 }
 
+impl From<u64> for Piece<'static> {
+    fn from(v: u64) -> Self {
+        Self::Bytes8(v.to_le_bytes())
+    }
+}
+
 impl From<u32> for Piece<'static> {
     fn from(v: u32) -> Self {
         Self::Bytes4(v.to_le_bytes())
