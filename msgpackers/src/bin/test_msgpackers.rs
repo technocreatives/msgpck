@@ -15,7 +15,11 @@ fn msgpack_to_vec(m: &impl MsgPack) -> Vec<u8> {
 
 /// Deserialize a [MsgPack] type from bytes
 fn msgpack_from_bytes<'a, T: MsgUnpack + 'a>(mut bytes: &'a [u8]) -> Result<T, UnpackErr> {
-    T::unpack(&mut bytes)
+    let value = T::unpack(&mut bytes)?;
+    if !bytes.is_empty() {
+        return Err(UnpackErr::TrailingBytes(bytes.len()));
+    }
+    Ok(value)
 }
 
 // PoC of an async serializer

@@ -10,4 +10,6 @@ pub enum UnpackErr {
     WrongMarker(Marker),
     #[error("Encounted an integer value that was too large. {0}")]
     IntTooBig(#[from] TryFromIntError),
+    #[error("There were {0} bytes remaining after unpacking.")]
+    TrailingBytes(usize),
 }
