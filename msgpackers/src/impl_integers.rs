@@ -44,40 +44,40 @@ impl MsgPack for u64 {
     }
 }
 
-impl MsgUnpack for u8 {
-    fn unpack<'buf>(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
+impl<'buf> MsgUnpack<'buf> for u8 {
+    fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
     where
-        Self: Sized + 'buf,
+        Self: Sized,
     {
         let n = unpack_u64(bytes)?;
         Ok(n.try_into()?)
     }
 }
 
-impl MsgUnpack for u16 {
-    fn unpack<'buf>(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
+impl<'buf> MsgUnpack<'buf> for u16 {
+    fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
     where
-        Self: Sized + 'buf,
+        Self: Sized,
     {
         let n = unpack_u64(bytes)?;
         Ok(n.try_into()?)
     }
 }
 
-impl MsgUnpack for u32 {
-    fn unpack<'buf>(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
+impl<'buf> MsgUnpack<'buf> for u32 {
+    fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
     where
-        Self: Sized + 'buf,
+        Self: Sized,
     {
         let n = unpack_u64(bytes)?;
         Ok(n.try_into()?)
     }
 }
 
-impl MsgUnpack for u64 {
-    fn unpack<'buf>(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
+impl<'buf> MsgUnpack<'buf> for u64 {
+    fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
     where
-        Self: Sized + 'buf,
+        Self: Sized,
     {
         unpack_u64(bytes)
     }

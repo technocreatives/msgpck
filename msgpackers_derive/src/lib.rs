@@ -5,7 +5,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::{quote, TokenStreamExt};
-use syn::{parse_macro_input, spanned::Spanned, DataStruct, DeriveInput};
+use syn::{parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput};
 
 #[proc_macro_derive(MsgUnpack)]
 pub fn derive_unpack(input: TokenStream) -> TokenStream {
@@ -73,10 +73,10 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     }
 
     quote! {
-        impl ::msgpackers::MsgUnpack for #struct_name {
-            fn unpack<'buf>(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpackers::UnpackErr>
+        impl<'buf> ::msgpackers::MsgUnpack<'buf> for #struct_name {
+            fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpackers::UnpackErr>
             where
-                Self: Sized + 'buf,
+                Self: Sized,
             {
                 use ::msgpackers::{MsgUnpack, UnpackErr, unpack_array_header};
                 let n = unpack_array_header(bytes)?;
@@ -85,16 +85,16 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                     return Err(UnpackErr::UnexpectedEof);
                 }
 
-                if n > #struct_len {
-                    return Err(UnpackErr::UnexpectedEof);
-                }
-
                 let value = Self {
                     #unpack_body
                 };
 
+                if n > #struct_len {
+                    return Err(UnpackErr::UnexpectedEof);
+                }
+
                 // TODO: be lenient with parsing
-                //for _ in 3..=n {
+                //for _ in #struct_len..=n {
                 //    let _ = MsgUnpack::unpack(bytes)?;
                 //}
 
@@ -104,6 +104,31 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
 
     }
     .into()
+}
+
+fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
+    let enum_name = &input.ident;
+    let variant_count = &data.variants.len();
+
+    let mut unpack_body = quote! {};
+
+    //todo!("derive pack for enums")
+
+    quote! {
+        impl ::msgpackers::MsgUnpack for #enum_name {
+            fn unpack<'buf>(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpackers::UnpackErr>
+            where
+                Self: Sized + 'buf,
+            {
+
+            }
+        }
+    }
+    .into()
+}
+
+fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
+    todo!("derive unpack for enums")
 }
 
 fn array_len_iter(len: usize) -> proc_macro2::TokenStream {

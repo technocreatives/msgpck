@@ -1,17 +1,20 @@
 #![feature(impl_trait_in_assoc_type)]
-#![feature(generators)]
-#![feature(iter_from_generator)]
+#![feature(generators, iter_from_generator)]
+#![feature(slice_take)]
 #![allow(clippy::match_overlapping_arm)]
 
+mod enums;
 mod error;
 mod impl_collections;
 mod impl_floats;
 mod impl_integers;
+mod impl_strings;
 mod piece;
 mod util;
 
+pub use enums::{pack_enum_header, unpack_enum_header, EnumHeader, Variant};
 pub use error::UnpackErr;
-pub use msgpackers_derive::MsgPack;
+pub use msgpackers_derive::{MsgPack, MsgUnpack};
 pub use piece::Piece;
 pub use rmp::Marker;
 pub use util::unpack_array_header;
@@ -36,7 +39,7 @@ pub trait MsgPack {
 }
 
 /// Trait for deserializing a type using msgpack.
-pub trait MsgUnpack {
+pub trait MsgUnpack<'buf> {
     /// Unpack a value from a msgpack bytes slice
     ///
     /// ```
@@ -45,7 +48,7 @@ pub trait MsgUnpack {
     /// let decoded: Vec<u8> = Vec::unpack(&mut &encoded[..]).unwrap();
     /// assert_eq!(decoded, &[0xDDu8, 0xEE, 3]);
     /// ```
-    fn unpack<'buf>(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
+    fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
     where
-        Self: Sized + 'buf;
+        Self: Sized;
 }

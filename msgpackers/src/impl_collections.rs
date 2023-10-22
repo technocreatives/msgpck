@@ -30,10 +30,10 @@ impl<T: MsgPack> MsgPack for Vec<T> {
     }
 }
 
-impl<T: MsgUnpack> MsgUnpack for Vec<T> {
-    fn unpack<'buf>(bytes: &mut &'buf [u8]) -> Result<Self, crate::UnpackErr>
+impl<'buf, T: MsgUnpack<'buf> + 'buf> MsgUnpack<'buf> for Vec<T> {
+    fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, crate::UnpackErr>
     where
-        Self: Sized + 'buf,
+        Self: Sized,
     {
         let len: usize = unpack_array_header(bytes)?;
 
