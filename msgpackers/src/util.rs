@@ -1,6 +1,8 @@
+use core::iter;
+
 use rmp::Marker;
 
-use crate::UnpackErr;
+use crate::{Piece, UnpackErr};
 
 pub fn slice_take<'a, T, const N: usize>(s: &mut &'a [T]) -> Result<&'a [T; N], UnpackErr> {
     if s.len() < N {
@@ -26,6 +28,21 @@ pub fn unpack_array_header(bytes: &mut &[u8]) -> Result<usize, UnpackErr> {
         m => return Err(UnpackErr::WrongMarker(m)),
     })
 }
+
+pub fn pack_map_header<'a>(len: usize) -> impl Iterator<Item = Piece<'a>> {
+    iter::from_generator(move || match len {
+        ..=0xf => yield Marker::FixMap(len as u8).into(),
+        ..=0xffff => {
+            yield Marker::Map16.into();
+            yield (len as u16).into();
+        }
+        _ => {
+            yield Marker::Map32.into();
+            yield (len as u32).into();
+        }
+    })
+}
+
 /// Helper function that tries to decode a msgpack map header from a byte slice.
 ///
 /// Returns the length of the map.

@@ -1,4 +1,5 @@
 use crate::{util::unpack_array_header, MsgPack, MsgUnpack, Piece, UnpackErr};
+use alloc::vec::Vec;
 use core::iter;
 use rmp::Marker;
 

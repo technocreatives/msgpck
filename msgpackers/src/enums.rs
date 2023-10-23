@@ -1,4 +1,8 @@
-use crate::{util::unpack_map_header, Marker, MsgUnpack, Piece, UnpackErr};
+use core::iter;
+
+use crate::{
+    impl_integers::pack_u64, util::unpack_map_header, Marker, MsgPack, MsgUnpack, Piece, UnpackErr,
+};
 
 /// The header/key of a msgpack-encoded enum value.
 pub struct EnumHeader<'a> {
@@ -13,11 +17,35 @@ pub enum Variant<'a> {
     Name(&'a str),
 }
 
-pub fn pack_enum_header<'a>(header: EnumHeader<'a>) -> impl Iterator<Item = Piece<'a>> {
-    // TODO
-    [].into_iter()
+/// Pack an enum header.
+///
+/// Note that this function does not necessarily pack a complete msgpack value.
+/// In the case of an enum with fields, the next value packed must be the fields of the enum.
+pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_>> {
+    iter::from_generator(move || {
+        if !header.unit {
+            yield Marker::FixMap(1).into();
+        }
+
+        match header.variant {
+            Variant::Discriminator(n) => {
+                for p in pack_u64(n) {
+                    yield p;
+                }
+            }
+            Variant::Name(s) => {
+                for p in s.pack() {
+                    yield p;
+                }
+            }
+        }
+    })
 }
 
+/// Unpack an enum header.
+///
+/// Note that this function does not necessarily unpack a complete msgpack value.
+/// In the case of an enum with fields, the next value unpacked must be the fields of the enum.
 pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, UnpackErr> {
     match Marker::from_u8(bytes[0]) {
         // if the enum is just a string or an int, it doesn't have any fields.

@@ -1,5 +1,5 @@
+use core::slice;
 use rmp::Marker;
-use std::slice;
 
 /// A piece of msgpack data. Used by the [MsgPack](crate::MsgPack) trait.
 #[derive(Debug)]

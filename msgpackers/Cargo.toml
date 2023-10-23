@@ -11,4 +11,8 @@ msgpackers_derive = { path = "../msgpackers_derive" }
 rmp-serde = "1.1.2"
 serde = { version = "1.0.189", features = ["derive"] }
 embedded-io-async = "0.6.0"
-thiserror = "1.0.50"
+thiserror = { version = "1.0.50", optional = true }
+
+[features]
+alloc = []
+std = ["alloc", "thiserror"]

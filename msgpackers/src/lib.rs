@@ -1,23 +1,29 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 #![feature(impl_trait_in_assoc_type)]
 #![feature(generators, iter_from_generator)]
 #![feature(slice_take)]
 #![allow(clippy::match_overlapping_arm)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 mod enums;
 mod error;
-mod impl_collections;
 mod impl_floats;
 mod impl_integers;
 mod impl_strings;
 mod piece;
 mod util;
 
+#[cfg(feature = "alloc")]
+mod impl_collections;
+
 pub use enums::{pack_enum_header, unpack_enum_header, EnumHeader, Variant};
 pub use error::UnpackErr;
 pub use msgpackers_derive::{MsgPack, MsgUnpack};
 pub use piece::Piece;
 pub use rmp::Marker;
-pub use util::unpack_array_header;
+pub use util::{pack_map_header, unpack_array_header, unpack_map_header};
 
 /// Trait for serializing a type using msgpack.
 pub trait MsgPack {

@@ -1,7 +1,6 @@
 use crate::{util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
-use core::iter;
+use core::{iter, str::from_utf8};
 use rmp::Marker;
-use std::str::from_utf8;
 
 impl MsgPack for str {
     type Iter<'a> = impl Iterator<Item = Piece<'a>>

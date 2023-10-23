@@ -1,9 +1,7 @@
 #![feature(impl_trait_in_assoc_type)]
 
 use embedded_io_async::Write;
-use msgpackers::{
-    pack_enum_header, unpack_enum_header, EnumHeader, MsgPack, MsgUnpack, Piece, UnpackErr, Variant,
-};
+use msgpackers::{pack_enum_header, EnumHeader, MsgPack, MsgUnpack, Piece, UnpackErr, Variant};
 
 /// Serialize a [MsgPack] type to a `Vec<u8>`.
 fn msgpack_to_vec(m: &impl MsgPack) -> Vec<u8> {
@@ -40,9 +38,9 @@ pub struct Foo {
 pub struct Bar {
     pub a: u8,
     pub b: u16,
-    pub c: Vec<u16>,
 }
 
+#[derive(Debug, MsgUnpack)]
 pub enum Baz {
     Bill,
     Bob(u32),
@@ -56,73 +54,39 @@ impl MsgPack for Baz {
 
     fn pack(&self) -> Self::Iter<'_> {
         let header = match self {
-            Baz::Bill => EnumHeader {
-                variant: Variant::Discriminator(0),
+            Self::Bill => EnumHeader {
+                //variant: Variant::Discriminator(0),
+                variant: Variant::Name("Bill"),
                 unit: true,
             },
-            Baz::Bob(..) => EnumHeader {
-                variant: Variant::Discriminator(1),
+            Self::Bob(..) => EnumHeader {
+                //variant: Variant::Discriminator(1),
+                variant: Variant::Name("Bob"),
                 unit: false,
             },
-            Baz::Bung { .. } => EnumHeader {
-                variant: Variant::Discriminator(2),
+            Self::Bung { .. } => EnumHeader {
+                //variant: Variant::Discriminator(2),
+                variant: Variant::Name("Bung"),
                 unit: false,
             },
         };
 
-        pack_enum_header(header)
-
-        // TODO: pack fields
-    }
-}
-
-impl<'buf> MsgUnpack<'buf> for Baz {
-    fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
-    where
-        Self: Sized + 'buf,
-    {
-        let header = unpack_enum_header(bytes)?;
-
-        use Variant::*;
-        Ok(match &header.variant {
-            Discriminator(0) | Name("Bill") => {
-                if !header.unit {
-                    return Err(todo!());
-                }
-                Self::Bill
-            }
-            Discriminator(1) | Name("Bob") => {
-                if header.unit {
-                    return Err(todo!());
-                }
-                todo!()
-            }
-            Discriminator(2) | Name("Bung") => {
-                if header.unit {
-                    return Err(todo!());
-                }
-                todo!("decode Bung");
-            }
-            // TODO include variant in error
-            _variant => return Err(UnpackErr::UnknownVariant),
-        })
+        match self {
+            //Self::Bill => pack_enum_header(header),
+            Self::Bob(n) => pack_enum_header(header).chain(n.pack()),
+            _ => unimplemented!(),
+        }
     }
 }
 
 fn main() {
-    let foo = Foo {
-        bar: Bar {
-            a: 0xee,
-            b: 3,
-            c: vec![0xa, 0xb, 0xc],
-        },
-    };
+    let foo = Baz::Bob(0xffff);
 
     println!("{foo:x?}");
 
     let bytes = msgpack_to_vec(&foo);
     println!("{bytes:x?}");
 
-    let decoded: Foo = msgpack_from_bytes(&bytes).unwrap();
+    let decoded: Baz = msgpack_from_bytes(&bytes).unwrap();
     println!("{decoded:x?}");
 }

@@ -83,7 +83,7 @@ impl<'buf> MsgUnpack<'buf> for u64 {
     }
 }
 
-fn unpack_u64(bytes: &mut &[u8]) -> Result<u64, UnpackErr> {
+pub(crate) fn unpack_u64(bytes: &mut &[u8]) -> Result<u64, UnpackErr> {
     let &[b] = slice_take(bytes)?;
 
     Ok(match Marker::from_u8(b) {
@@ -96,7 +96,7 @@ fn unpack_u64(bytes: &mut &[u8]) -> Result<u64, UnpackErr> {
     })
 }
 
-fn pack_u64<'a>(n: u64) -> impl Iterator<Item = Piece<'a>> {
+pub(crate) fn pack_u64<'a>(n: u64) -> impl Iterator<Item = Piece<'a>> {
     iter::from_generator(move || match n {
         ..=0x7f => yield (n as u8).into(),
         ..=0xff => {

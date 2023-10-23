@@ -4,7 +4,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
-use quote::{quote, TokenStreamExt};
+use quote::{quote, quote_spanned, TokenStreamExt};
 use syn::{parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput};
 
 #[proc_macro_derive(MsgUnpack)]
@@ -12,8 +12,11 @@ pub fn derive_unpack(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
         syn::Data::Struct(s) => derive_unpack_struct(&input, s),
-        syn::Data::Enum(_) => unimplemented!("TODO: implement derive for enums"),
-        syn::Data::Union(_) => panic!("no union pls"),
+        syn::Data::Enum(s) => derive_unpack_enum(&input, s),
+        syn::Data::Union(_) => quote! {
+            compile_error!("derive(MsgUnpack) is not supported for unions");
+        }
+        .into(),
     }
 }
 
@@ -22,8 +25,11 @@ pub fn derive_pack(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
         syn::Data::Struct(s) => derive_pack_struct(&input, s),
-        syn::Data::Enum(_) => unimplemented!("TODO: implement derive for enums"),
-        syn::Data::Union(_) => panic!("no union pls"),
+        syn::Data::Enum(s) => derive_pack_enum(&input, s),
+        syn::Data::Union(_) => quote! {
+            compile_error!("derive(MsgPack) is not supported for unions");
+        }
+        .into(),
     }
 }
 
@@ -106,29 +112,147 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     .into()
 }
 
-fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
+fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     let enum_name = &input.ident;
-    let variant_count = &data.variants.len();
 
-    let mut unpack_body = quote! {};
+    let mut unpack_variants = quote! {};
 
-    //todo!("derive pack for enums")
+    let mut discriminator = 0u64;
+    for variant in &data.variants {
+        if let Some((_, explicit_discriminant)) = &variant.discriminant {
+            // TODO
+            match explicit_discriminant {
+                syn::Expr::Lit(_lit) => {
+                    return quote_spanned! {
+                        explicit_discriminant.span() =>
+                        compile_error!("not supported (yet) by derive(MsgUnpack)");
+                    }
+                    .into();
+                }
+                _ => {
+                    return quote_spanned! {
+                        explicit_discriminant.span() =>
+                        compile_error!("not supported by derive(MsgUnpack)");
+                    }
+                    .into();
+                }
+            }
+        }
+
+        let variant_name = &variant.ident;
+        let variant_name_str = variant_name.to_string();
+        let match_pattern = quote! {
+            Discriminator(#discriminator) | Name(#variant_name_str)
+        };
+
+        let validate_type = match variant.fields.len() {
+            0 => quote! {
+                if !header.unit {
+                    return Err(UnpackErr::UnexpectedUnitVariant);
+                }
+            },
+            1 => quote! {
+                if header.unit {
+                    return Err(UnpackErr::ExpectedUnitVariant);
+                }
+            },
+            n => quote! {
+                if header.unit {
+                    return Err(UnpackErr::ExpectedUnitVariant);
+                }
+
+                let array_len = unpack_array_header(bytes)?;
+
+                if array_len < #n {
+                    return Err(UnpackErr::MissingFields {
+                        expected: #n,
+                        got: array_len,
+                    });
+                };
+
+                if array_len > #n {
+                    todo!("decide how to handle encodede enum variants with too many fields");
+                };
+            },
+        };
+
+        let mut construct_fields = quote! {};
+
+        match &variant.fields {
+            syn::Fields::Unit => {}
+            syn::Fields::Named(fields) => {
+                for field in &fields.named {
+                    let field_name = field.ident.as_ref().unwrap();
+                    construct_fields.append_all(quote! {
+                        #field_name: MsgUnpack::unpack(bytes)?,
+                    });
+                }
+            }
+            syn::Fields::Unnamed(fields) => {
+                for _ in &fields.unnamed {
+                    construct_fields.append_all(quote! {
+                        MsgUnpack::unpack(bytes)?,
+                    });
+                }
+            }
+        };
+
+        let constructor = match &variant.fields {
+            syn::Fields::Named(_) => quote! { Self::#variant_name { #construct_fields } },
+            syn::Fields::Unnamed(_) => quote! { Self::#variant_name(#construct_fields) },
+            syn::Fields::Unit => quote! { Self::#variant_name },
+        };
+
+        unpack_variants.append_all(quote! {
+            #match_pattern => {
+                #validate_type
+                #constructor
+            }
+        });
+
+        discriminator += 1;
+    }
 
     quote! {
-        impl ::msgpackers::MsgUnpack for #enum_name {
-            fn unpack<'buf>(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpackers::UnpackErr>
+        impl<'buf> ::msgpackers::MsgUnpack<'buf> for #enum_name {
+            fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpackers::UnpackErr>
             where
                 Self: Sized + 'buf,
             {
+                use ::msgpackers::{UnpackErr, Variant::*, MsgUnpack, unpack_enum_header, unpack_array_header};
 
+                let header = unpack_enum_header(bytes)?;
+
+                Ok(match &header.variant {
+                    #unpack_variants
+                    _unknown_variant => return Err(UnpackErr::UnknownVariant)
+                })
             }
         }
     }
     .into()
 }
 
-fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
-    todo!("derive unpack for enums")
+fn derive_pack_enum(_input: &DeriveInput, _data: &DataEnum) -> TokenStream {
+    todo!("derive pack for enums")
+
+    //let enum_name = &input.ident;
+    //quote! {
+    //    type Iter<'a> = impl Iterator<Item = Piece<'a>>
+    //    where
+    //        Self: 'a;
+
+    //    impl ::msgpackers::MsgUnpack for #enum_name {
+    //        fn pack(&self) -> Self::Iter<'_> {
+    //            let header = match self {
+    //                #pack_headers
+    //            };
+
+    //            ::msgpackers::pack_enum_header(header)?;
+    //        }
+    //    }
+    //}
+    //.into()
 }
 
 fn array_len_iter(len: usize) -> proc_macro2::TokenStream {
