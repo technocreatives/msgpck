@@ -39,8 +39,8 @@ impl<'buf> MsgUnpack<'buf> for &'buf str {
         let len: usize = match Marker::from_u8(b) {
             Marker::FixStr(len) => len.into(),
             Marker::Str8 => slice_take::<_, 1>(bytes)?[0].into(),
-            Marker::Str16 => u16::from_le_bytes(*slice_take(bytes)?).into(),
-            Marker::Str32 => u32::from_le_bytes(*slice_take(bytes)?).try_into()?,
+            Marker::Str16 => u16::from_be_bytes(*slice_take(bytes)?).into(),
+            Marker::Str32 => u32::from_be_bytes(*slice_take(bytes)?).try_into()?,
             m => return Err(UnpackErr::WrongMarker(m)),
         };
 

@@ -1,7 +1,8 @@
-use crate::{util::unpack_array_header, MsgPack, MsgUnpack, Piece, UnpackErr};
+use crate::{
+    util::{pack_array_header, unpack_array_header},
+    MsgPack, MsgUnpack, Piece, UnpackErr,
+};
 use alloc::vec::Vec;
-use core::iter;
-use rmp::Marker;
 
 impl<T: MsgPack> MsgPack for Vec<T> {
     type Iter<'a> = impl Iterator<Item = Piece<'a>>
@@ -9,25 +10,7 @@ impl<T: MsgPack> MsgPack for Vec<T> {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        iter::from_generator(move || {
-            match self.len() {
-                ..=0xf => yield Marker::FixArray(self.len() as u8).into(),
-                ..=0xffff => {
-                    yield Marker::Array16.into();
-                    yield (self.len() as u16).into();
-                }
-                _ => {
-                    yield Marker::Array32.into();
-                    yield (self.len() as u32).into();
-                }
-            };
-
-            for t in self {
-                for m in t.pack() {
-                    yield m;
-                }
-            }
-        })
+        pack_array_header(self.len()).chain(self.iter().flat_map(|elem| elem.pack()))
     }
 }
 

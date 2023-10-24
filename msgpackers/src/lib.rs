@@ -23,7 +23,7 @@ pub use error::UnpackErr;
 pub use msgpackers_derive::{MsgPack, MsgUnpack};
 pub use piece::Piece;
 pub use rmp::Marker;
-pub use util::{pack_map_header, unpack_array_header, unpack_map_header};
+pub use util::{pack_array_header, pack_map_header, unpack_array_header, unpack_map_header};
 
 /// Trait for serializing a type using msgpack.
 pub trait MsgPack {

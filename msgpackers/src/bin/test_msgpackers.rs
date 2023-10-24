@@ -1,7 +1,7 @@
 #![feature(impl_trait_in_assoc_type)]
 
 use embedded_io_async::Write;
-use msgpackers::{pack_enum_header, EnumHeader, MsgPack, MsgUnpack, Piece, UnpackErr, Variant};
+use msgpackers::{MsgPack, MsgUnpack, Piece, UnpackErr};
 
 /// Serialize a [MsgPack] type to a `Vec<u8>`.
 fn msgpack_to_vec(m: &impl MsgPack) -> Vec<u8> {
@@ -40,47 +40,21 @@ pub struct Bar {
     pub b: u16,
 }
 
-#[derive(Debug, MsgUnpack)]
+#[derive(Debug, MsgPack, MsgUnpack)]
 pub enum Baz {
     Bill,
     Bob(u32),
-    Bung { field1: Bar, field2: u32 },
-}
-
-impl MsgPack for Baz {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
-        let header = match self {
-            Self::Bill => EnumHeader {
-                //variant: Variant::Discriminator(0),
-                variant: Variant::Name("Bill"),
-                unit: true,
-            },
-            Self::Bob(..) => EnumHeader {
-                //variant: Variant::Discriminator(1),
-                variant: Variant::Name("Bob"),
-                unit: false,
-            },
-            Self::Bung { .. } => EnumHeader {
-                //variant: Variant::Discriminator(2),
-                variant: Variant::Name("Bung"),
-                unit: false,
-            },
-        };
-
-        match self {
-            //Self::Bill => pack_enum_header(header),
-            Self::Bob(n) => pack_enum_header(header).chain(n.pack()),
-            _ => unimplemented!(),
-        }
-    }
+    Bung { field1: Foo, field2: u32 },
 }
 
 fn main() {
-    let foo = Baz::Bob(0xffff);
+    let foo = Baz::Bob(1234567);
+    //let foo = Baz::Bung {
+    //    field1: Foo {
+    //        bar: Bar { a: 0x5, b: 0xff },
+    //    },
+    //    field2: 0x1234,
+    //};
 
     println!("{foo:x?}");
 

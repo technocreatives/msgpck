@@ -89,9 +89,9 @@ pub(crate) fn unpack_u64(bytes: &mut &[u8]) -> Result<u64, UnpackErr> {
     Ok(match Marker::from_u8(b) {
         Marker::FixPos(n) => n.into(),
         Marker::U8 => slice_take::<u8, 1>(bytes)?[0].into(),
-        Marker::U16 => u16::from_le_bytes(*slice_take(bytes)?).into(),
-        Marker::U32 => u32::from_le_bytes(*slice_take(bytes)?).into(),
-        Marker::U64 => u64::from_le_bytes(*slice_take(bytes)?),
+        Marker::U16 => u16::from_be_bytes(*slice_take(bytes)?).into(),
+        Marker::U32 => u32::from_be_bytes(*slice_take(bytes)?).into(),
+        Marker::U64 => u64::from_be_bytes(*slice_take(bytes)?),
         m => return Err(UnpackErr::WrongMarker(m)),
     })
 }

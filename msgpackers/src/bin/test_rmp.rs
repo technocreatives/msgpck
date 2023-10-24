@@ -9,16 +9,21 @@ pub struct Foo {
 pub struct Bar {
     pub a: u8,
     pub b: u16,
-    pub c: Vec<u16>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Baz {
+    Bill,
+    Bob(u32),
+    Bung { field1: Foo, field2: u32 },
 }
 
 fn main() {
-    let foo = Foo {
-        bar: Bar {
-            a: 0xee,
-            b: 3,
-            c: vec![0xa, 0xb, 0xc],
+    let foo = Baz::Bung {
+        field1: Foo {
+            bar: Bar { a: 0x5, b: 0xff },
         },
+        field2: 0x1234,
     };
 
     println!("{foo:x?}");
@@ -26,6 +31,6 @@ fn main() {
     let bytes = rmp_serde::to_vec(&foo).unwrap();
     println!("{bytes:x?}");
 
-    let decoded: Foo = rmp_serde::from_slice(&bytes).unwrap();
+    let decoded: Baz = rmp_serde::from_slice(&bytes).unwrap();
     println!("{decoded:x?}");
 }

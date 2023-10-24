@@ -7,7 +7,7 @@ impl MsgPack for f32 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        [Marker::F32.into(), Piece::Bytes4(self.to_le_bytes())].into_iter()
+        [Marker::F32.into(), Piece::Bytes4(self.to_be_bytes())].into_iter()
     }
 }
 
@@ -17,6 +17,6 @@ impl MsgPack for f64 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        [Marker::F64.into(), Piece::Bytes8(self.to_le_bytes())].into_iter()
+        [Marker::F64.into(), Piece::Bytes8(self.to_be_bytes())].into_iter()
     }
 }

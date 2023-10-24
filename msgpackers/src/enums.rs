@@ -11,10 +11,22 @@ pub struct EnumHeader<'a> {
     pub unit: bool,
 }
 
-/// The discriminator or name of an enum variant.
+/// The discriminant or name of an enum variant.
 pub enum Variant<'a> {
-    Discriminator(u64),
+    Discriminant(u64),
     Name(&'a str),
+}
+
+impl<'a> From<&'a str> for Variant<'a> {
+    fn from(name: &'a str) -> Self {
+        Variant::Name(name)
+    }
+}
+
+impl<'a> From<u64> for Variant<'a> {
+    fn from(discriminant: u64) -> Self {
+        Variant::Discriminant(discriminant)
+    }
 }
 
 /// Pack an enum header.
@@ -28,7 +40,7 @@ pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_
         }
 
         match header.variant {
-            Variant::Discriminator(n) => {
+            Variant::Discriminant(n) => {
                 for p in pack_u64(n) {
                     yield p;
                 }
@@ -49,7 +61,7 @@ pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_
 pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, UnpackErr> {
     match Marker::from_u8(bytes[0]) {
         // if the enum is just a string or an int, it doesn't have any fields.
-        // decode the discriminator/name and return early.
+        // decode the discriminant/name and return early.
         Marker::FixStr(..) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
             return Ok(EnumHeader {
                 variant: Variant::Name(MsgUnpack::unpack(bytes)?),
@@ -58,7 +70,7 @@ pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, Un
         }
         Marker::FixPos(..) | Marker::U8 | Marker::U16 | Marker::U32 | Marker::U64 => {
             return Ok(EnumHeader {
-                variant: Variant::Discriminator(MsgUnpack::unpack(bytes)?),
+                variant: Variant::Discriminant(MsgUnpack::unpack(bytes)?),
                 unit: true,
             });
         }
@@ -73,10 +85,10 @@ pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, Un
         m => return Err(UnpackErr::WrongMarker(m)),
     }
 
-    // read the discriminator/name from the map key
+    // read the discriminant/name from the map key
     let variant = match Marker::from_u8(bytes[0]) {
         Marker::FixPos(..) | Marker::U8 | Marker::U16 | Marker::U32 | Marker::U64 => {
-            Variant::Discriminator(MsgUnpack::unpack(bytes)?)
+            Variant::Discriminant(MsgUnpack::unpack(bytes)?)
         }
         Marker::FixStr(..) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
             Variant::Name(MsgUnpack::unpack(bytes)?)
