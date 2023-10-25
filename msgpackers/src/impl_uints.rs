@@ -2,8 +2,6 @@ use crate::{util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
 use core::iter;
 use rmp::Marker;
 
-// TODO: impl for signed integers
-
 impl MsgPack for u8 {
     type Iter<'a> = impl Iterator<Item = Piece<'a>>
     where

@@ -9,3 +9,5 @@ msgpackers = { path = "../msgpackers", features = ["std"] }
 thiserror = { version = "1.0.50", optional = true }
 serde = { version = "1.0.189", features = ["derive"] }
 rmp-serde = "1.1.2"
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"

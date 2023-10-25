@@ -69,9 +69,23 @@ where
     println!();
 }
 
-pub fn test_int_size<I: TryFrom<u64>>(int: u64)
+pub fn test_uint<I: TryFrom<u64>>(int: u64)
 where
     I: TryFrom<u64>,
+    I: Debug + Serialize + PartialEq + MsgPack,
+    I: for<'a> Deserialize<'a>,
+    I: for<'a> MsgUnpack<'a>,
+{
+    let Ok(int) = I::try_from(int) else {
+        return;
+    };
+
+    test_pack_unpack(&int);
+}
+
+pub fn test_int<I: TryFrom<i64>>(int: i64)
+where
+    I: TryFrom<i64>,
     I: Debug + Serialize + PartialEq + MsgPack,
     I: for<'a> Deserialize<'a>,
     I: for<'a> MsgUnpack<'a>,

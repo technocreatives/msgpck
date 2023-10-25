@@ -1,30 +1,20 @@
 use msgpackers_tests::*;
+use quickcheck_macros::quickcheck;
 
-/// Test pack/unpack for integers of various size
-#[test]
-fn integers() {
-    let integers: &[u64] = &[
-        1,
-        2,
-        3,
-        0x7f,
-        0xef,
-        0xff,
-        0xff,
-        0x100,
-        0xabcd,
-        0xabcdef,
-        0xabcdeffe,
-        0xffffffff,
-        0xffffffffffffffff,
-    ];
+#[quickcheck]
+fn signed_integers(i: i64) {
+    test_int::<i64>(i);
+    test_int::<i32>(i);
+    test_int::<i16>(i);
+    test_int::<i8>(i);
+}
 
-    for &int in integers {
-        test_int_size::<u64>(int);
-        test_int_size::<u32>(int);
-        test_int_size::<u16>(int);
-        test_int_size::<u8>(int);
-    }
+#[quickcheck]
+fn unsigned_integers(i: u64) {
+    test_uint::<u64>(i);
+    test_uint::<u32>(i);
+    test_uint::<u16>(i);
+    test_uint::<u8>(i);
 }
 
 #[test]
