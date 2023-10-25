@@ -2,43 +2,56 @@
 
 extern crate proc_macro;
 
-use proc_macro::TokenStream;
-use proc_macro2::Ident;
+use proc_macro2::{Ident, TokenStream};
 use quote::{quote, quote_spanned, TokenStreamExt};
 use syn::{
     parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput, Fields, Index, Member,
 };
 
 #[proc_macro_derive(MsgPack)]
-pub fn derive_pack(input: TokenStream) -> TokenStream {
+pub fn derive_pack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
         syn::Data::Struct(s) => derive_pack_struct(&input, s),
         syn::Data::Enum(s) => derive_pack_enum(&input, s),
         syn::Data::Union(_) => quote! {
             compile_error!("derive(MsgPack) is not supported for unions");
-        }
-        .into(),
+        },
     }
+    .into()
 }
 
 #[proc_macro_derive(MsgUnpack)]
-pub fn derive_unpack(input: TokenStream) -> TokenStream {
+pub fn derive_unpack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
         syn::Data::Struct(s) => derive_unpack_struct(&input, s),
         syn::Data::Enum(s) => derive_unpack_enum(&input, s),
         syn::Data::Union(_) => quote! {
             compile_error!("derive(MsgUnpack) is not supported for unions");
-        }
-        .into(),
+        },
     }
+    .into()
 }
 
 /// Generate impl MsgPack for a struct
 fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     let struct_name = &input.ident;
     let struct_len = data.fields.len();
+
+    if let Some(where_clause) = &input.generics.where_clause {
+        return quote_spanned! {
+            where_clause.span() =>
+            compile_error!("derive(MsgPack) doesn't support where clauses for structs");
+        };
+    }
+
+    if !input.generics.params.is_empty() {
+        return quote_spanned! {
+            input.generics.params.span() =>
+            compile_error!("derive(MsgPack) doesn't support generics for structs");
+        };
+    }
 
     let mut encode_body = quote! {};
 
@@ -82,6 +95,21 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
 fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     let struct_name = &input.ident;
     let struct_len = data.fields.len();
+
+    if let Some(where_clause) = &input.generics.where_clause {
+        return quote_spanned! {
+            where_clause.span() =>
+            compile_error!("derive(MsgUnpack) doesn't support where clauses for structs");
+        };
+    }
+
+    if !input.generics.params.is_empty() {
+        return quote_spanned! {
+            input.generics.params.span() =>
+            compile_error!("derive(MsgUnpack) doesn't support generics for structs");
+        };
+    }
+
     let mut unpack_fields = quote! {};
 
     for field in data.fields.iter() {
@@ -145,12 +173,25 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
         }
 
     }
-    .into()
 }
 
 /// Generate impl MsgUnpack for an enum
 fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     let enum_name = &input.ident;
+
+    if let Some(where_clause) = &input.generics.where_clause {
+        return quote_spanned! {
+            where_clause.span() =>
+            compile_error!("derive(MsgUnpack) doesn't support where clauses for enums");
+        };
+    }
+
+    if !input.generics.params.is_empty() {
+        return quote_spanned! {
+            input.generics.params.span() =>
+            compile_error!("derive(MsgUnpack) doesn't support generics for enums");
+        };
+    }
 
     let mut unpack_variants = quote! {};
 
@@ -165,14 +206,12 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                         explicit_discriminant.span() =>
                         compile_error!("not supported (yet) by derive(MsgUnpack)");
                     }
-                    .into();
                 }
                 _ => {
                     return quote_spanned! {
                         explicit_discriminant.span() =>
                         compile_error!("not supported by derive(MsgUnpack)");
                     }
-                    .into();
                 }
             }
         }
@@ -269,12 +308,25 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
             }
         }
     }
-    .into()
 }
 
 /// Generate impl MsgPack for an enum
 fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     let enum_name = &input.ident;
+
+    if let Some(where_clause) = &input.generics.where_clause {
+        return quote_spanned! {
+            where_clause.span() =>
+            compile_error!("derive(MsgPack) doesn't support where clauses for enums");
+        };
+    }
+
+    if !input.generics.params.is_empty() {
+        return quote_spanned! {
+            input.generics.params.span() =>
+            compile_error!("derive(MsgPack) doesn't support generics for enums");
+        };
+    }
 
     let mut iter_enum_generics = quote! {};
     let mut iter_enum_variants = quote! {};
@@ -295,15 +347,13 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         //            return quote_spanned! {
         //                explicit_discriminant.span() =>
         //                compile_error!("not supported (yet) by derive(MsgUnpack)");
-        //            }
-        //            .into();
+        //            };
         //        }
         //        _ => {
         //            return quote_spanned! {
         //                explicit_discriminant.span() =>
         //                compile_error!("not supported by derive(MsgUnpack)");
-        //            }
-        //            .into();
+        //            };
         //        }
         //    }
         //}
@@ -427,10 +477,9 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
             }
         }
     }
-    .into()
 }
 
-fn array_len_iter(len: usize) -> proc_macro2::TokenStream {
+fn array_len_iter(len: usize) -> TokenStream {
     match len {
         ..=0xf => {
             let len = len as u8;
