@@ -2,6 +2,7 @@
 members = [
 	"msgpackers",
 	"msgpackers_derive",
+	"msgpackers_tests",
 ]
 
 resolver = "2"

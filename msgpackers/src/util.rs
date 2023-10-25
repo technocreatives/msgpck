@@ -17,7 +17,7 @@ pub fn slice_take<'a, T, const N: usize>(s: &mut &'a [T]) -> Result<&'a [T; N], 
 
 /// Helper function that packs a msgpack array header.
 ///
-/// Note that values of the array are not included, and must therefore be packed next.
+/// **NOTE**: Values of the array are not included, and must therefore be packed next.
 pub fn pack_array_header<'a>(len: usize) -> impl Iterator<Item = Piece<'a>> {
     iter::from_generator(move || {
         match len {
@@ -36,7 +36,10 @@ pub fn pack_array_header<'a>(len: usize) -> impl Iterator<Item = Piece<'a>> {
 
 /// Helper function that tries to decode a msgpack array header from a byte slice.
 ///
-/// Returns the length of the array.
+/// **NOTE**: This doesn't decode the elements of the array, they need to be decoded next.
+///
+/// ## Returns
+/// The length of the array.
 pub fn unpack_array_header(bytes: &mut &[u8]) -> Result<usize, UnpackErr> {
     let &[b] = slice_take(bytes)?;
 
@@ -48,6 +51,9 @@ pub fn unpack_array_header(bytes: &mut &[u8]) -> Result<usize, UnpackErr> {
     })
 }
 
+/// Helper function that packs a msgpack map header.
+///
+/// **NOTE**: Keys and values of the map are not included, and must therefore be packed next.
 pub fn pack_map_header<'a>(len: usize) -> impl Iterator<Item = Piece<'a>> {
     iter::from_generator(move || match len {
         ..=0xf => yield Marker::FixMap(len as u8).into(),
@@ -64,7 +70,8 @@ pub fn pack_map_header<'a>(len: usize) -> impl Iterator<Item = Piece<'a>> {
 
 /// Helper function that tries to decode a msgpack map header from a byte slice.
 ///
-/// Returns the length of the map.
+/// ## Returns
+/// The length of the map.
 pub fn unpack_map_header(bytes: &mut &[u8]) -> Result<usize, UnpackErr> {
     let &[b] = slice_take(bytes)?;
 

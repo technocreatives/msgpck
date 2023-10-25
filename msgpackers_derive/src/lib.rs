@@ -86,7 +86,7 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
             where
                 Self: Sized,
             {
-                use ::msgpackers::{MsgUnpack, UnpackErr, unpack_array_header};
+                use ::msgpackers::{MsgUnpack, UnpackErr, helpers::unpack_array_header};
                 let n = unpack_array_header(bytes)?;
 
                 if n < #struct_len {
@@ -223,7 +223,8 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
             where
                 Self: Sized + 'buf,
             {
-                use ::msgpackers::{UnpackErr, Variant::*, MsgUnpack, unpack_enum_header, unpack_array_header};
+                use ::msgpackers::{UnpackErr, Variant::*, MsgUnpack};
+                use ::msgpackers::helpers::{unpack_enum_header, unpack_array_header};
 
                 let header = unpack_enum_header(bytes)?;
 
@@ -298,7 +299,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 let fields_len = fields.named.len();
                 if fields_len > 1 {
                     pack_fields.append_all(quote! {
-                        .chain(::msgpackers::pack_array_header(#fields_len))
+                        .chain(::msgpackers::helpers::pack_array_header(#fields_len))
                     });
                 }
 
@@ -323,7 +324,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 let fields_len = fields.unnamed.len();
                 if fields_len > 1 {
                     pack_fields.append_all(quote! {
-                        .chain(::msgpackers::pack_array_header(#fields_len))
+                        .chain(::msgpackers::helpers::pack_array_header(#fields_len))
                     });
                 }
 
@@ -349,7 +350,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         pack_variants.append_all(quote! {
             Self::#variant_name #match_fields => {
                 __MsgpackerIter::#variant_name(
-                    ::msgpackers::pack_enum_header(::msgpackers::EnumHeader {
+                    ::msgpackers::helpers::pack_enum_header(::msgpackers::EnumHeader {
                         variant: #variant_name_str.into(),
                         unit: #unit,
                     })

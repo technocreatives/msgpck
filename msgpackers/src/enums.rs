@@ -31,7 +31,7 @@ impl<'a> From<u64> for Variant<'a> {
 
 /// Pack an enum header.
 ///
-/// Note that this function does not necessarily pack a complete msgpack value.
+/// **NOTE**: This function does not necessarily pack a complete msgpack value.
 /// In the case of an enum with fields, the next value packed must be the fields of the enum.
 pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_>> {
     iter::from_generator(move || {
@@ -56,7 +56,7 @@ pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_
 
 /// Unpack an enum header.
 ///
-/// Note that this function does not necessarily unpack a complete msgpack value.
+/// **NOTE**: This function does not necessarily unpack a complete msgpack value.
 /// In the case of an enum with fields, the next value unpacked must be the fields of the enum.
 pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, UnpackErr> {
     match Marker::from_u8(bytes[0]) {
