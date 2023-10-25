@@ -17,6 +17,22 @@ fn unsigned_integers(i: u64) {
     test_uint::<u8>(i);
 }
 
+#[quickcheck]
+fn f32s(f: f32) {
+    if f.is_nan() {
+        return; // i'm not dealing with this...
+    }
+    test_pack_unpack(&f);
+}
+
+#[quickcheck]
+fn f64s(f: f32) {
+    if f.is_nan() {
+        return; // i'm not dealing with this...
+    }
+    test_pack_unpack(&f);
+}
+
 #[test]
 fn unit_enum() {
     test_pack_unpack(&Baz::Bill);
