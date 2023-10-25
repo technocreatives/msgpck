@@ -33,6 +33,9 @@ pub enum UnpackErr {
     #[cfg_attr(feature = "std", error("Not enough fields when deserializing struct or enum variant, got {got}, expected {expected}"))]
     MissingFields { got: usize, expected: usize },
 
+    #[cfg_attr(feature = "std", error("Too many fields when deserializing struct or enum variant, got {got}, expected {expected}"))]
+    TooManyFields { got: usize, expected: usize },
+
     #[cfg_attr(
         feature = "std",
         error(

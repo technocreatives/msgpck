@@ -5,7 +5,9 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::{quote, quote_spanned, TokenStreamExt};
-use syn::{parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput};
+use syn::{
+    parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput, Fields, Index, Member,
+};
 
 #[proc_macro_derive(MsgPack)]
 pub fn derive_pack(input: TokenStream) -> TokenStream {
@@ -36,15 +38,27 @@ pub fn derive_unpack(input: TokenStream) -> TokenStream {
 /// Generate impl MsgPack for a struct
 fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     let struct_name = &input.ident;
-    let mut encode_body = array_len_iter(data.fields.len());
+    let struct_len = data.fields.len();
+
+    let mut encode_body = quote! {};
+
+    // serialize newtype structs without using array, this is to maintain compatibility with serde
+    encode_body.append_all(match &data.fields {
+        Fields::Unnamed(..) if struct_len == 1 => {
+            quote! { ::core::iter::empty() }
+        }
+        _ => array_len_iter(data.fields.len()),
+    });
 
     for (i, field) in data.fields.iter().enumerate() {
-        let ident = field
-            .ident
-            .clone()
-            .unwrap_or_else(|| Ident::new(&format!("{i}"), field.span()));
+        let member = field.ident.clone().map(Member::Named).unwrap_or_else(|| {
+            Member::Unnamed(Index {
+                index: i as u32,
+                span: field.span(),
+            })
+        });
         encode_body.append_all(quote! {
-            .chain(self.#ident.pack())
+            .chain(self.#member.pack())
         });
     }
 
@@ -68,17 +82,55 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
 fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     let struct_name = &input.ident;
     let struct_len = data.fields.len();
-    let mut unpack_body = quote! {};
+    let mut unpack_fields = quote! {};
 
-    for (i, field) in data.fields.iter().enumerate() {
-        let ident = field
-            .ident
-            .clone()
-            .unwrap_or_else(|| Ident::new(&format!("{i}"), field.span()));
-        unpack_body.append_all(quote! {
-            #ident: MsgUnpack::unpack(bytes)?,
-        });
+    for field in data.fields.iter() {
+        if let Some(ident) = &field.ident {
+            unpack_fields.append_all(quote! {
+                #ident: MsgUnpack::unpack(bytes)?,
+            });
+        } else {
+            unpack_fields.append_all(quote! {
+                MsgUnpack::unpack(bytes)?,
+            });
+        }
     }
+
+    // wrap the fields in the appropriate brackets, if any
+    unpack_fields = match &data.fields {
+        Fields::Named(_) => quote! { {#unpack_fields} },
+        Fields::Unnamed(_) => quote! { (#unpack_fields) },
+        Fields::Unit => quote! {},
+    };
+
+    // newtype structs are serialized without using an array, this is to maintain compatibility with serde
+    let unpack_body = if matches!(&data.fields, Fields::Unnamed(..)) && struct_len == 1 {
+        quote! {
+            let value = Self #unpack_fields;
+            Ok(value)
+        }
+    } else {
+        quote! {
+            let n = unpack_array_header(bytes)?;
+
+            if n < #struct_len {
+                return Err(UnpackErr::MissingFields {
+                    got: n,
+                    expected: #struct_len
+                });
+            }
+            if n > #struct_len {
+                return Err(UnpackErr::TooManyFields {
+                    got: n,
+                    expected: #struct_len
+                });
+            }
+
+            let value = Self #unpack_fields;
+
+            Ok(value)
+        }
+    };
 
     quote! {
         impl<'buf> ::msgpackers::MsgUnpack<'buf> for #struct_name {
@@ -87,26 +139,8 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                 Self: Sized,
             {
                 use ::msgpackers::{MsgUnpack, UnpackErr, helpers::unpack_array_header};
-                let n = unpack_array_header(bytes)?;
 
-                if n < #struct_len {
-                    return Err(UnpackErr::UnexpectedEof);
-                }
-
-                let value = Self {
-                    #unpack_body
-                };
-
-                if n > #struct_len {
-                    return Err(UnpackErr::UnexpectedEof);
-                }
-
-                // TODO: be lenient with parsing
-                //for _ in #struct_len..=n {
-                //    let _ = MsgUnpack::unpack(bytes)?;
-                //}
-
-                Ok(value)
+                #unpack_body
             }
         }
 

@@ -46,8 +46,9 @@ fn complex_enum() {
         field1: Foo {
             bar: Bar {
                 a: 0xee,
-                b: 3,
+                b: Fizz(3),
                 c: vec![0xa, 0xb, 0xc],
+                d: Fuzz,
             },
         },
         field2: u32::MAX,

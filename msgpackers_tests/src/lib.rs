@@ -14,9 +14,16 @@ pub struct Foo {
 #[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub struct Bar {
     pub a: u8,
-    pub b: u16,
+    pub b: Fizz,
     pub c: Vec<u16>,
+    pub d: Fuzz,
 }
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+pub struct Fizz(pub u16);
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+pub struct Fuzz;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub enum Baz {
@@ -36,13 +43,12 @@ where
     let packed_rmp = rmp_serde::to_vec(original).expect("pack value using rmp_serde");
     let packed_msgpackers = msgpackers::pack_vec(original);
 
+    println!("packed (rmp_serde):    {packed_rmp:x?}");
+    println!("packed (msgpackers):   {packed_msgpackers:x?}");
     assert_eq!(
         packed_rmp, packed_msgpackers,
         "msgpackers must be compatible with rmp_serde"
     );
-
-    println!("packed (rmp_serde):    {packed_rmp:x?}");
-    println!("packed (msgpackers):   {packed_msgpackers:x?}");
 
     let unpacked_rmp: T = rmp_serde::from_slice(&packed_rmp).expect("unpack value using rmp_serde");
     let unpacked_msgpackers: T =
