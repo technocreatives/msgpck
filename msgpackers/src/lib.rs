@@ -40,6 +40,7 @@ extern crate alloc;
 
 mod enums;
 mod error;
+mod impl_bool;
 mod impl_floats;
 mod impl_ints;
 mod impl_strings;

@@ -34,6 +34,12 @@ fn f64s(f: f32) {
 }
 
 #[test]
+fn bools() {
+    test_pack_unpack(&true);
+    test_pack_unpack(&false);
+}
+
+#[test]
 fn unit_enum() {
     test_pack_unpack(&Baz::Bill);
 }
