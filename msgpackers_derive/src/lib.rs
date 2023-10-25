@@ -50,7 +50,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
 
     quote! {
         impl msgpackers::MsgPack for #struct_name {
-            type Iter<'a> = impl Iterator<Item = msgpackers::Piece<'a>>
+            type Iter<'a> = impl Iterator<Item = ::msgpackers::Piece<'a>>
             where
                 Self: 'a;
 
@@ -361,7 +361,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
     quote! {
         impl ::msgpackers::MsgPack for #enum_name {
-            type Iter<'a> = impl Iterator<Item = Piece<'a>>
+            type Iter<'a> = impl Iterator<Item = ::msgpackers::Piece<'a>>
             where
                 Self: 'a;
 
@@ -375,7 +375,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 }
 
                 impl<'a, #iter_enum_bounds> Iterator for __MsgpackerIter<#iter_enum_generics> {
-                    type Item = Piece<'a>;
+                    type Item = ::msgpackers::Piece<'a>;
 
                     // the implementation of next simply forwards to the inner iterators
                     fn next(&mut self) -> Option<Self::Item> {
