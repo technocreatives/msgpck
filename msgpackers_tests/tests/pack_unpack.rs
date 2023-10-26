@@ -61,8 +61,19 @@ fn complex_enum() {
                 b: Fizz(3),
                 c: vec![0xa, 0xb, 0xc],
                 d: Fuzz,
+                e: Fgblrp {
+                    t: vec![],
+                    y: -1234567890,
+                },
             },
         },
         field2: u32::MAX,
     });
 }
+
+// TODO
+/*
+fn struct_with_lifetime() {
+    test_pack_unpack(&WithLifetime { s: "Hello there." });
+}
+*/

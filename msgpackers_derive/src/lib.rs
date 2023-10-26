@@ -5,7 +5,8 @@ extern crate proc_macro;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, quote_spanned, TokenStreamExt};
 use syn::{
-    parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput, Fields, Index, Member,
+    parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput, Fields, GenericParam,
+    Index, Member,
 };
 
 #[proc_macro_derive(MsgPack)]
@@ -42,18 +43,23 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
-            compile_error!("derive(MsgPack) doesn't support where clauses for structs");
-        };
-    }
-
-    if !input.generics.params.is_empty() {
-        return quote_spanned! {
-            input.generics.params.span() =>
-            compile_error!("derive(MsgPack) doesn't support generics for structs");
+            compile_error!("derive(MsgPack) doesn't support where-clauses for structs");
         };
     }
 
     let mut encode_body = quote! {};
+    let mut generic_bounds = quote! {};
+    let generics = &input.generics.params;
+
+    for param in generics {
+        generic_bounds.append_all(match param {
+            GenericParam::Type(t) => quote! {
+                #t: ::msgpackers::MsgPack,
+            },
+            GenericParam::Lifetime(..) => continue,
+            GenericParam::Const(..) => continue,
+        });
+    }
 
     // serialize newtype structs without using array, this is to maintain compatibility with serde
     encode_body.append_all(match &data.fields {
@@ -76,13 +82,14 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     }
 
     quote! {
-        impl msgpackers::MsgPack for #struct_name {
-            type Iter<'a> = impl Iterator<Item = ::msgpackers::Piece<'a>>
+        impl<#generics> msgpackers::MsgPack for #struct_name<#generics>
+        where #generic_bounds {
+            type Iter<'_msgpack> = impl Iterator<Item = ::msgpackers::Piece<'_msgpack>>
             where
-                Self: 'a;
+                Self: '_msgpack;
 
-            fn pack<'a>(&'a self) -> Self::Iter<'a> {
-                use ::std::iter::once;
+            fn pack<'_msgpack>(&'_msgpack self) -> Self::Iter<'_msgpack> {
+                use ::core::iter::once;
                 use ::msgpackers::Marker;
                 #encode_body
             }
@@ -99,18 +106,25 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
-            compile_error!("derive(MsgUnpack) doesn't support where clauses for structs");
-        };
-    }
-
-    if !input.generics.params.is_empty() {
-        return quote_spanned! {
-            input.generics.params.span() =>
-            compile_error!("derive(MsgUnpack) doesn't support generics for structs");
+            compile_error!("derive(MsgUnpack) doesn't support where-clauses for structs");
         };
     }
 
     let mut unpack_fields = quote! {};
+    let mut generic_bounds = quote! {};
+    let generics = &input.generics.params;
+
+    for param in generics {
+        generic_bounds.append_all(match param {
+            GenericParam::Lifetime(l) => quote! {
+                '_msgpack: #l,
+            },
+            GenericParam::Type(t) => quote! {
+                #t: ::msgpackers::MsgUnpack<'_msgpack>,
+            },
+            GenericParam::Const(..) => continue,
+        });
+    }
 
     for field in data.fields.iter() {
         if let Some(ident) = &field.ident {
@@ -161,8 +175,9 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     };
 
     quote! {
-        impl<'buf> ::msgpackers::MsgUnpack<'buf> for #struct_name {
-            fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpackers::UnpackErr>
+        impl<'_msgpack, #generics> ::msgpackers::MsgUnpack<'_msgpack> for #struct_name<#generics>
+        where #generic_bounds {
+            fn unpack(bytes: &mut &'_msgpack [u8]) -> Result<Self, ::msgpackers::UnpackErr>
             where
                 Self: Sized,
             {
@@ -182,7 +197,7 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
-            compile_error!("derive(MsgUnpack) doesn't support where clauses for enums");
+            compile_error!("derive(MsgUnpack) doesn't support where-clauses for enums");
         };
     }
 
@@ -317,7 +332,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
-            compile_error!("derive(MsgPack) doesn't support where clauses for enums");
+            compile_error!("derive(MsgPack) doesn't support where-clauses for enums");
         };
     }
 

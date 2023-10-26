@@ -17,6 +17,7 @@ pub struct Bar {
     pub b: Fizz,
     pub c: Vec<u16>,
     pub d: Fuzz,
+    pub e: Fgblrp<Vec<i32>, i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
@@ -24,6 +25,17 @@ pub struct Fizz(pub u16);
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub struct Fuzz;
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+pub struct Fgblrp<T, Y> {
+    pub t: T,
+    pub y: Y,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+pub struct WithLifetime<'a> {
+    pub s: &'a str,
+}
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub enum Baz {

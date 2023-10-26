@@ -30,6 +30,16 @@ impl MsgPack for str {
     }
 }
 
+impl MsgPack for &str {
+    type Iter<'a> = impl Iterator<Item = Piece<'a>>
+    where
+        Self: 'a;
+
+    fn pack(&self) -> Self::Iter<'_> {
+        str::pack(self)
+    }
+}
+
 impl<'buf> MsgUnpack<'buf> for &'buf str {
     fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
     where
