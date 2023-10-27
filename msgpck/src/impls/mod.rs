@@ -1,3 +1,6 @@
+#[cfg(feature = "alloc")]
+mod alloc;
+mod array;
 mod bools;
 mod bytes;
 mod enums;
