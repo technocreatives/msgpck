@@ -2,7 +2,7 @@
 
 extern crate proc_macro;
 
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned, TokenStreamExt};
 use syn::{
     parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput, Fields, GenericParam,
@@ -14,7 +14,7 @@ pub fn derive_pack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
         syn::Data::Struct(s) => derive_pack_struct(&input, s),
-        syn::Data::Enum(s) => quote! {
+        syn::Data::Enum(_s) => quote! {
             compile_error!("derive(MsgPack) is not supported for enums yet");
         },
         syn::Data::Union(_) => quote! {

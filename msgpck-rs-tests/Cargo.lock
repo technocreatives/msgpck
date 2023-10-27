@@ -72,6 +72,7 @@ checksum = "f665ee40bc4a3c5590afb1e9677db74a508659dfd71e126420da8274909a0167"
 name = "msgpck"
 version = "0.1.0"
 dependencies = [
+ "msgpck_derive",
  "num-traits",
 ]
 
@@ -103,6 +104,15 @@ dependencies = [
  "rmp-serde",
  "serde",
  "thiserror",
+]
+
+[[package]]
+name = "msgpck_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.38",
 ]
 
 [[package]]
