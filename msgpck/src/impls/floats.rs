@@ -47,3 +47,28 @@ impl<'buf> UnMsgPck<'buf> for f64 {
         Ok(f64::from_be_bytes(*slice_take(source)?))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_f32(s: f32) {
+            let mut writer: Vec<_> = Vec::new();
+            s.pack(&mut writer).unwrap();
+            let d = f32::unpack(&mut &writer[..]).unwrap();
+            assert_eq!(s, d);
+        }
+
+        #[test]
+        fn test_f64(s: f64) {
+            let mut writer: Vec<_> = Vec::new();
+            s.pack(&mut writer).unwrap();
+            let d = f64::unpack(&mut &writer[..]).unwrap();
+            assert_eq!(s, d);
+        }
+    }
+}
