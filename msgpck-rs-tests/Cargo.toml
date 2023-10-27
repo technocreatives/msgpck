@@ -4,6 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
+msgpck = { path = "../msgpck", features = ["std"] }
 msgpck-rs = { path = "../msgpck-rs", features = ["std"] }
 thiserror = { version = "1.0.50", optional = true }
 serde = { version = "1.0.189", features = ["derive"] }
