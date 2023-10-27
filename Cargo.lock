@@ -15,25 +15,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
-name = "embedded-io"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa9417478b5440a2c25f95b25e3ec6ec92e7f9a7ae90c9719e434daeec4ece71"
-
-[[package]]
-name = "embedded-io-async"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de03527d6fb488b2d7c7a4dc81dfb6a657efe264256bfc70bb899746821666b1"
-dependencies = [
- "embedded-io",
-]
-
-[[package]]
 name = "msgpck-rs"
 version = "0.1.0"
 dependencies = [
- "embedded-io-async",
  "msgpck-rs-derive",
  "rmp",
  "thiserror",

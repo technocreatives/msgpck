@@ -3,12 +3,9 @@ name = "msgpck-rs"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 rmp = { version = "0.8.12", default-features = false }
 msgpck-rs-derive = { path = "../msgpck-rs-derive" }
-embedded-io-async = "0.6.0"
 thiserror = { version = "1.0.50", optional = true }
 
 [features]
