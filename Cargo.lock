@@ -155,6 +155,7 @@ dependencies = [
 name = "msgpck"
 version = "0.1.0"
 dependencies = [
+ "msgpck_derive",
  "num-traits",
  "paste",
  "proptest",
@@ -175,6 +176,17 @@ name = "msgpck-rs-derive"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",
+ "quote",
+ "syn 2.0.38",
+]
+
+[[package]]
+name = "msgpck_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "proptest",
+ "proptest-derive",
  "quote",
  "syn 2.0.38",
 ]

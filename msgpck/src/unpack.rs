@@ -13,10 +13,27 @@ pub enum UnpackError {
     WrongMarker(Marker),
     UnexpectedEof,
     IntTooBig(TryFromIntError),
+
     #[cfg(feature = "debug")]
     Utf8Error(Utf8Error),
     #[cfg(not(feature = "debug"))]
     Utf8Error,
+
+    // #[cfg(feature = "debug")]
+    // MissingFields {
+    //     got: usize,
+    //     expected: usize,
+    // },
+    // #[cfg(not(feature = "debug"))]
+    MissingFields,
+
+    // #[cfg(feature = "debug")]
+    // TooManyFields {
+    //     got: usize,
+    //     expected: usize,
+    // },
+    // #[cfg(not(feature = "debug"))]
+    TooManyFields,
 }
 
 impl From<TryFromIntError> for UnpackError {

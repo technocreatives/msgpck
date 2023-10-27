@@ -1,5 +1,5 @@
 [workspace]
-members = ["msgpck-rs", "msgpck-rs-derive", "msgpck"]
+members = ["msgpck-rs", "msgpck-rs-derive", "msgpck", "msgpck_derive"]
 
 exclude = ["msgpck-rs-tests"]
 
