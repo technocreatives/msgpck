@@ -1,8 +1,5 @@
+use crate::{marker::Marker, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
 use core::iter;
-
-use rmp::Marker;
-
-use crate::{util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
 
 impl MsgPack for bool {
     type Iter<'a> = impl Iterator<Item = Piece<'a>>

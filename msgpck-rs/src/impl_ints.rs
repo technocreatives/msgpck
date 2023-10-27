@@ -1,5 +1,7 @@
-use crate::{MsgPack, MsgUnpack, Piece, UnpackErr};
-use rmp::decode::NumValueReadError;
+use crate::{
+    impl_uints::pack_u64, marker::Marker, piece::Pair, util::slice_take, MsgPack, MsgUnpack, Piece,
+    UnpackErr,
+};
 
 impl MsgPack for i8 {
     type Iter<'a> = impl Iterator<Item = Piece<'a>>
@@ -7,7 +9,7 @@ impl MsgPack for i8 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        pack_i64(i64::from(*self))
+        pack_i64(i64::from(*self)).into_iter()
     }
 }
 
@@ -17,7 +19,7 @@ impl MsgPack for i16 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        pack_i64(i64::from(*self))
+        pack_i64(i64::from(*self)).into_iter()
     }
 }
 
@@ -27,7 +29,7 @@ impl MsgPack for i32 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        pack_i64(i64::from(*self))
+        pack_i64(i64::from(*self)).into_iter()
     }
 }
 
@@ -37,7 +39,7 @@ impl MsgPack for i64 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        pack_i64(*self)
+        pack_i64(*self).into_iter()
     }
 }
 
@@ -81,34 +83,40 @@ impl<'buf> MsgUnpack<'buf> for i64 {
 }
 
 pub(crate) fn unpack_i64(bytes: &mut &[u8]) -> Result<i64, UnpackErr> {
-    rmp::decode::read_int(bytes).map_err(|e| match e {
-        NumValueReadError::TypeMismatch(m) => UnpackErr::WrongMarker(m),
-        _ => UnpackErr::UnexpectedEof,
+    let &[b] = slice_take(bytes)?;
+    Ok(match Marker::from_u8(b) {
+        Marker::FixNeg(i) => i.into(),
+        Marker::FixPos(n) => n.into(),
+        Marker::I8 => {
+            let &[i] = slice_take(bytes)?;
+            (i as i8).into()
+        }
+        Marker::U8 => {
+            let &[n] = slice_take(bytes)?;
+            n.into()
+        }
+        Marker::I16 => i16::from_be_bytes(*slice_take(bytes)?).into(),
+        Marker::U16 => u16::from_be_bytes(*slice_take(bytes)?).into(),
+        Marker::I32 => i32::from_be_bytes(*slice_take(bytes)?).into(),
+        Marker::U32 => u32::from_be_bytes(*slice_take(bytes)?).into(),
+        Marker::I64 => i64::from_be_bytes(*slice_take(bytes)?),
+        Marker::U64 => {
+            let n = u64::from_be_bytes(*slice_take(bytes)?);
+            n.try_into().map_err(UnpackErr::IntTooBig)?
+        }
+        m => return Err(UnpackErr::WrongMarker(m)),
     })
 }
 
-pub(crate) fn pack_i64<'a>(n: i64) -> impl Iterator<Item = Piece<'a>> {
-    const INT_MAX_SIZE: usize = 9;
-    let mut buf = [0u8; INT_MAX_SIZE];
-    let mut w = &mut buf[..];
-
-    let _ = rmp::encode::write_sint(&mut w, n);
-    let bytes_written = INT_MAX_SIZE - w.len();
-
-    let (&marker, data) = buf[..bytes_written]
-        .split_first()
-        .expect("rmp::write_sint must encode at least 1 byte");
-
-    let data = match data.len() {
-        0 => None,
-        1 => Some(Piece::Byte(data[0])),
-        2 => Some(Piece::Bytes2(data.try_into().unwrap())),
-        4 => Some(Piece::Bytes4(data.try_into().unwrap())),
-        8 => Some(Piece::Bytes8(data.try_into().unwrap())),
-        _ => unreachable!(
-            "msgpack integers are always encoded as 0, 1, 2, 4, or 8 bytes (excluding marker)"
-        ),
-    };
-
-    [Some(Piece::Byte(marker)), data].into_iter().flatten()
+pub(crate) fn pack_i64<'a>(i: i64) -> Pair<'a> {
+    // Pack i into the smallest msgpack type that will fit it.
+    match i {
+        ..=-2147483649 => Pair(Marker::I64.into(), Some(i.into())),
+        ..=-32769 => Pair(Marker::I32.into(), Some((i as i32).into())),
+        ..=-129 => Pair(Marker::I16.into(), Some((i as i16).into())),
+        ..=-33 => Pair(Marker::I8.into(), Some((i as u8).into())),
+        ..=-1 => Pair(Marker::FixNeg(i as i8).into(), None),
+        // If the value is positive, pack as an unsigned integer.
+        _ => return pack_u64(i as u64),
+    }
 }

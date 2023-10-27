@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rmp = { version = "0.8.12", default-features = false }
 msgpck-rs-derive = { path = "../msgpck-rs-derive" }
 thiserror = { version = "1.0.50", optional = true }
 

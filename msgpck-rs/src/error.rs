@@ -1,7 +1,6 @@
+use crate::marker::Marker;
 use core::num::TryFromIntError;
 use core::str::Utf8Error;
-
-use rmp::Marker;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]

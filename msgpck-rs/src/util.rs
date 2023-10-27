@@ -1,8 +1,5 @@
+use crate::{marker::Marker, Piece, UnpackErr};
 use core::iter;
-
-use rmp::Marker;
-
-use crate::{Piece, UnpackErr};
 
 pub fn slice_take<'a, T, const N: usize>(s: &mut &'a [T]) -> Result<&'a [T; N], UnpackErr> {
     if s.len() < N {

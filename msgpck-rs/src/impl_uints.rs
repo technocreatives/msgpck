@@ -1,6 +1,4 @@
-use crate::{util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
-use core::iter;
-use rmp::Marker;
+use crate::{marker::Marker, piece::Pair, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
 
 impl MsgPack for u8 {
     type Iter<'a> = impl Iterator<Item = Piece<'a>>
@@ -8,7 +6,7 @@ impl MsgPack for u8 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        pack_u64(u64::from(*self))
+        pack_u64(u64::from(*self)).into_iter()
     }
 }
 
@@ -18,7 +16,7 @@ impl MsgPack for u16 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        pack_u64(u64::from(*self))
+        pack_u64(u64::from(*self)).into_iter()
     }
 }
 
@@ -28,7 +26,7 @@ impl MsgPack for u32 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        pack_u64(u64::from(*self))
+        pack_u64(u64::from(*self)).into_iter()
     }
 }
 
@@ -38,7 +36,7 @@ impl MsgPack for u64 {
         Self: 'a;
 
     fn pack(&self) -> Self::Iter<'_> {
-        pack_u64(*self)
+        pack_u64(*self).into_iter()
     }
 }
 
@@ -94,24 +92,12 @@ pub(crate) fn unpack_u64(bytes: &mut &[u8]) -> Result<u64, UnpackErr> {
     })
 }
 
-pub(crate) fn pack_u64<'a>(n: u64) -> impl Iterator<Item = Piece<'a>> {
-    iter::from_generator(move || match n {
-        ..=0x7f => yield (n as u8).into(),
-        ..=0xff => {
-            yield Marker::U8.into();
-            yield (n as u8).into();
-        }
-        ..=0xffff => {
-            yield Marker::U16.into();
-            yield (n as u16).into();
-        }
-        ..=0xffffffff => {
-            yield Marker::U32.into();
-            yield (n as u32).into();
-        }
-        _ => {
-            yield Marker::U64.into();
-            yield n.into();
-        }
-    })
+pub(crate) fn pack_u64<'a>(n: u64) -> Pair<'a> {
+    match n {
+        ..=0x7f => Pair(Marker::FixPos(n as u8).into(), None),
+        ..=0xff => Pair(Marker::U8.into(), Some((n as u8).into())),
+        ..=0xffff => Pair(Marker::U16.into(), Some((n as u16).into())),
+        ..=0xffffffff => Pair(Marker::U32.into(), Some((n as u32).into())),
+        _ => Pair(Marker::U64.into(), Some(n.into())),
+    }
 }

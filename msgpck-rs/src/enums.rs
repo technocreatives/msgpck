@@ -1,7 +1,8 @@
 use core::iter;
 
 use crate::{
-    impl_uints::pack_u64, util::unpack_map_header, Marker, MsgPack, MsgUnpack, Piece, UnpackErr,
+    impl_uints::pack_u64, marker::Marker, util::unpack_map_header, MsgPack, MsgUnpack, Piece,
+    UnpackErr,
 };
 
 /// The header/key of a msgpack-encoded enum value.

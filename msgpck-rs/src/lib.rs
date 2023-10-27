@@ -46,6 +46,7 @@ mod impl_floats;
 mod impl_ints;
 mod impl_strings;
 mod impl_uints;
+mod marker;
 mod packers;
 mod piece;
 mod util;
@@ -55,10 +56,10 @@ mod impl_collections;
 
 pub use enums::{EnumHeader, Variant};
 pub use error::UnpackErr;
+pub use marker::Marker;
 pub use msgpck_rs_derive::{MsgPack, MsgUnpack};
 pub use packers::*;
 pub use piece::Piece;
-pub use rmp::Marker;
 
 /// Trait for serializing a type using msgpack.
 pub trait MsgPack {

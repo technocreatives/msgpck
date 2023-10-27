@@ -1,6 +1,5 @@
-use crate::{util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
+use crate::{marker::Marker, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
 use core::iter;
-use rmp::Marker;
 
 impl MsgPack for [u8] {
     type Iter<'a> = impl Iterator<Item = Piece<'a>>
@@ -42,6 +41,6 @@ impl<'buf> MsgUnpack<'buf> for &'buf [u8] {
             m => return Err(UnpackErr::WrongMarker(m)),
         };
 
-        Ok(bytes.take(..len).ok_or(UnpackErr::UnexpectedEof)?)
+        bytes.take(..len).ok_or(UnpackErr::UnexpectedEof)
     }
 }

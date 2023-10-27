@@ -1,5 +1,4 @@
-use crate::{util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
-use rmp::Marker;
+use crate::{marker::Marker, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
 
 impl MsgPack for f32 {
     type Iter<'a> = impl Iterator<Item = Piece<'a>>

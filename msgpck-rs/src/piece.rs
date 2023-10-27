@@ -1,5 +1,5 @@
+use crate::marker::Marker;
 use core::slice;
-use rmp::Marker;
 
 /// A piece of msgpack data. Used by the [MsgPack](crate::MsgPack) trait.
 #[derive(Debug)]
@@ -19,6 +19,9 @@ pub enum Piece<'a> {
     /// Some msgpack byte
     Byte(u8),
 }
+
+/// One or two pieces. Usually a [Marker] and maybe some data.
+pub struct Pair<'a>(pub Piece<'a>, pub Option<Piece<'a>>);
 
 impl Piece<'_> {
     pub fn as_bytes(&self) -> &[u8] {
@@ -56,6 +59,24 @@ impl From<u16> for Piece<'static> {
     }
 }
 
+impl From<i64> for Piece<'static> {
+    fn from(v: i64) -> Self {
+        Self::Bytes8(v.to_be_bytes())
+    }
+}
+
+impl From<i32> for Piece<'static> {
+    fn from(v: i32) -> Self {
+        Self::Bytes4(v.to_be_bytes())
+    }
+}
+
+impl From<i16> for Piece<'static> {
+    fn from(v: i16) -> Self {
+        Self::Bytes2(v.to_be_bytes())
+    }
+}
+
 impl<'a> From<&'a [u8]> for Piece<'a> {
     fn from(bytes: &'a [u8]) -> Self {
         Self::Bytes(bytes)
@@ -65,5 +86,15 @@ impl<'a> From<&'a [u8]> for Piece<'a> {
 impl From<u8> for Piece<'static> {
     fn from(v: u8) -> Self {
         Self::Byte(v)
+    }
+}
+
+impl<'a> IntoIterator for Pair<'a> {
+    type Item = Piece<'a>;
+
+    type IntoIter = impl Iterator<Item = Piece<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        [Some(self.0), self.1].into_iter().flatten()
     }
 }
