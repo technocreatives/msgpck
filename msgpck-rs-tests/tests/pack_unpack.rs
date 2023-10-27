@@ -1,4 +1,4 @@
-use msgpackers_tests::*;
+use msgpck_rs_tests::*;
 use quickcheck_macros::quickcheck;
 
 #[quickcheck]

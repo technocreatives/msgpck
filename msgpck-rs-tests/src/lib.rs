@@ -1,8 +1,8 @@
-//! A simple test that checks whether msgpackers is compatible with rmp_serde.
+//! A simple test that checks whether msgpck_rs is compatible with rmp_serde.
 
 #![feature(impl_trait_in_assoc_type)]
 
-use msgpackers::{MsgPack, MsgUnpack};
+use msgpck_rs::{MsgPack, MsgUnpack};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -53,29 +53,29 @@ where
     println!("original: {original:x?}");
 
     let packed_rmp = rmp_serde::to_vec(original).expect("pack value using rmp_serde");
-    let packed_msgpackers = msgpackers::pack_vec(original);
+    let packed_msgpck_rs = msgpck_rs::pack_vec(original);
 
     println!("packed (rmp_serde):    {packed_rmp:x?}");
-    println!("packed (msgpackers):   {packed_msgpackers:x?}");
+    println!("packed (msgpck_rs):   {packed_msgpck_rs:x?}");
     assert_eq!(
-        packed_rmp, packed_msgpackers,
-        "msgpackers must be compatible with rmp_serde"
+        packed_rmp, packed_msgpck_rs,
+        "msgpck_rs must be compatible with rmp_serde"
     );
 
     let unpacked_rmp: T = rmp_serde::from_slice(&packed_rmp).expect("unpack value using rmp_serde");
-    let unpacked_msgpackers: T =
-        msgpackers::unpack_bytes(&packed_msgpackers).expect("unpack value using msgpackers");
+    let unpacked_msgpck_rs: T =
+        msgpck_rs::unpack_bytes(&packed_msgpck_rs).expect("unpack value using msgpck_rs");
 
     println!("unpacked (rmp_serde):  {unpacked_rmp:x?}");
-    println!("unpacked (msgpackers): {unpacked_msgpackers:x?}");
+    println!("unpacked (msgpck_rs): {unpacked_msgpck_rs:x?}");
 
     assert_eq!(
         original, &unpacked_rmp,
         "must be the same after unpacking with rmp"
     );
     assert_eq!(
-        original, &unpacked_msgpackers,
-        "must be the same after unpacking with msgpackers"
+        original, &unpacked_msgpck_rs,
+        "must be the same after unpacking with msgpck_rs"
     );
 
     println!();

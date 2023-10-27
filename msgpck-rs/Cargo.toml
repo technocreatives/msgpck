@@ -1,5 +1,5 @@
 [package]
-name = "msgpackers"
+name = "msgpck-rs"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 rmp = { version = "0.8.12", default-features = false }
-msgpackers_derive = { path = "../msgpackers_derive" }
+msgpck-rs-derive = { path = "../msgpck-rs-derive" }
 embedded-io-async = "0.6.0"
 thiserror = { version = "1.0.50", optional = true }
 

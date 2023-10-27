@@ -1,5 +1,5 @@
 [package]
-name = "msgpackers_derive"
+name = "msgpck-rs-derive"
 version = "0.1.0"
 edition = "2021"
 

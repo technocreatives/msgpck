@@ -54,7 +54,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     for param in generics {
         generic_bounds.append_all(match param {
             GenericParam::Type(t) => quote! {
-                #t: ::msgpackers::MsgPack,
+                #t: ::msgpck_rs::MsgPack,
             },
             GenericParam::Lifetime(..) => continue,
             GenericParam::Const(..) => continue,
@@ -82,15 +82,15 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     }
 
     quote! {
-        impl<#generics> msgpackers::MsgPack for #struct_name<#generics>
+        impl<#generics> msgpck_rs::MsgPack for #struct_name<#generics>
         where #generic_bounds {
-            type Iter<'_msgpack> = impl Iterator<Item = ::msgpackers::Piece<'_msgpack>>
+            type Iter<'_msgpack> = impl Iterator<Item = ::msgpck_rs::Piece<'_msgpack>>
             where
                 Self: '_msgpack;
 
             fn pack<'_msgpack>(&'_msgpack self) -> Self::Iter<'_msgpack> {
                 use ::core::iter::once;
-                use ::msgpackers::Marker;
+                use ::msgpck_rs::Marker;
                 #encode_body
             }
         }
@@ -120,7 +120,7 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                 '_msgpack: #l,
             },
             GenericParam::Type(t) => quote! {
-                #t: ::msgpackers::MsgUnpack<'_msgpack>,
+                #t: ::msgpck_rs::MsgUnpack<'_msgpack>,
             },
             GenericParam::Const(..) => continue,
         });
@@ -175,13 +175,13 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     };
 
     quote! {
-        impl<'_msgpack, #generics> ::msgpackers::MsgUnpack<'_msgpack> for #struct_name<#generics>
+        impl<'_msgpack, #generics> ::msgpck_rs::MsgUnpack<'_msgpack> for #struct_name<#generics>
         where #generic_bounds {
-            fn unpack(bytes: &mut &'_msgpack [u8]) -> Result<Self, ::msgpackers::UnpackErr>
+            fn unpack(bytes: &mut &'_msgpack [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
             where
                 Self: Sized,
             {
-                use ::msgpackers::{MsgUnpack, UnpackErr, helpers::unpack_array_header};
+                use ::msgpck_rs::{MsgUnpack, UnpackErr, helpers::unpack_array_header};
 
                 #unpack_body
             }
@@ -306,13 +306,13 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     }
 
     quote! {
-        impl<'buf> ::msgpackers::MsgUnpack<'buf> for #enum_name {
-            fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpackers::UnpackErr>
+        impl<'buf> ::msgpck_rs::MsgUnpack<'buf> for #enum_name {
+            fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
             where
                 Self: Sized + 'buf,
             {
-                use ::msgpackers::{UnpackErr, Variant::*, MsgUnpack};
-                use ::msgpackers::helpers::{unpack_enum_header, unpack_array_header};
+                use ::msgpck_rs::{UnpackErr, Variant::*, MsgUnpack};
+                use ::msgpck_rs::helpers::{unpack_enum_header, unpack_array_header};
 
                 let header = unpack_enum_header(bytes)?;
 
@@ -377,7 +377,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         iter_enum_generics.append_all(quote! {#variant_name,});
         iter_enum_variants.append_all(quote! {#variant_name(#variant_name),});
         iter_enum_bounds
-            .append_all(quote! {#variant_name: Iterator<Item = ::msgpackers::Piece<'a>>,});
+            .append_all(quote! {#variant_name: Iterator<Item = ::msgpck_rs::Piece<'a>>,});
         iter_enum_match.append_all(quote! {
             Self::#variant_name(inner_iter) => inner_iter.next(),
         });
@@ -398,7 +398,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 let fields_len = fields.named.len();
                 if fields_len > 1 {
                     pack_fields.append_all(quote! {
-                        .chain(::msgpackers::helpers::pack_array_header(#fields_len))
+                        .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
                     });
                 }
 
@@ -423,7 +423,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 let fields_len = fields.unnamed.len();
                 if fields_len > 1 {
                     pack_fields.append_all(quote! {
-                        .chain(::msgpackers::helpers::pack_array_header(#fields_len))
+                        .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
                     });
                 }
 
@@ -449,7 +449,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         pack_variants.append_all(quote! {
             Self::#variant_name #match_fields => {
                 __MsgpackerIter::#variant_name(
-                    ::msgpackers::helpers::pack_enum_header(::msgpackers::EnumHeader {
+                    ::msgpck_rs::helpers::pack_enum_header(::msgpck_rs::EnumHeader {
                         variant: #variant_name_str.into(),
                         unit: #unit,
                     })
@@ -460,8 +460,8 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     }
 
     quote! {
-        impl ::msgpackers::MsgPack for #enum_name {
-            type Iter<'a> = impl Iterator<Item = ::msgpackers::Piece<'a>>
+        impl ::msgpck_rs::MsgPack for #enum_name {
+            type Iter<'a> = impl Iterator<Item = ::msgpck_rs::Piece<'a>>
             where
                 Self: 'a;
 
@@ -475,7 +475,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 }
 
                 impl<'a, #iter_enum_bounds> Iterator for __MsgpackerIter<#iter_enum_generics> {
-                    type Item = ::msgpackers::Piece<'a>;
+                    type Item = ::msgpck_rs::Piece<'a>;
 
                     // the implementation of next simply forwards to the inner iterators
                     fn next(&mut self) -> Option<Self::Item> {

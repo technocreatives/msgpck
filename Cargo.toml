@@ -1,8 +1,11 @@
 [workspace]
 members = [
-	"msgpackers",
-	"msgpackers_derive",
-	#"msgpackers_tests",
+	"msgpck-rs",
+	"msgpck-rs-derive",
+]
+
+exclude = [
+	"msgpck-rs-tests",
 ]
 
 resolver = "2"

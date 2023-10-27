@@ -1,11 +1,11 @@
 [package]
-name = "msgpackers_tests"
+name = "msgpck-rs-tests"
 version = "0.0.0"
 edition = "2021"
 
 [dependencies]
 rmp = { version = "0.8.12", default-features = false }
-msgpackers = { path = "../msgpackers", features = ["std"] }
+msgpck-rs = { path = "../msgpck-rs", features = ["std"] }
 thiserror = { version = "1.0.50", optional = true }
 serde = { version = "1.0.189", features = ["derive"] }
 rmp-serde = "1.1.2"

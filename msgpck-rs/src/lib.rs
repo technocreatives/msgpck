@@ -11,7 +11,7 @@
 //! Here is a simple example of an async pack function:
 //! ```
 //! #![feature(async_fn_in_trait)]
-//! use msgpackers::MsgPack;
+//! use msgpck_rs::MsgPack;
 //!
 //! trait AsyncWrite {
 //!     async fn write(&mut self, bytes: &[u8]);
@@ -55,7 +55,7 @@ mod impl_collections;
 
 pub use enums::{EnumHeader, Variant};
 pub use error::UnpackErr;
-pub use msgpackers_derive::{MsgPack, MsgUnpack};
+pub use msgpck_rs_derive::{MsgPack, MsgUnpack};
 #[cfg(feature = "alloc")]
 pub use packers::pack_vec;
 pub use packers::unpack_bytes;
@@ -71,7 +71,7 @@ pub trait MsgPack {
     /// Returns an iterator of msgpack [Piece]s. Collect them all to produce a valid msgpack value.
     ///
     /// ```
-    /// use msgpackers::MsgPack;
+    /// use msgpck_rs::MsgPack;
     /// let mut encoded = vec![];
     /// for m in vec![0xDDu8, 0xEE, 3].pack() {
     ///     encoded.extend_from_slice(m.as_bytes());
@@ -86,7 +86,7 @@ pub trait MsgUnpack<'buf> {
     /// Unpack a value from a msgpack bytes slice
     ///
     /// ```
-    /// use msgpackers::MsgUnpack;
+    /// use msgpck_rs::MsgUnpack;
     /// let encoded = [0x93, 0xCC, 0xDD, 0xCC, 0xEE, 3];
     /// let decoded: Vec<u8> = Vec::unpack(&mut &encoded[..]).unwrap();
     /// assert_eq!(decoded, &[0xDDu8, 0xEE, 3]);
