@@ -52,6 +52,16 @@ impl<'buf> UnMsgPck<'buf> for &'buf str {
     }
 }
 
+#[cfg(feature = "alloc")]
+impl<'buf> UnMsgPck<'buf> for String {
+    fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
+    where
+        Self: Sized,
+    {
+        <&str>::unpack(source).map(|s| s.to_owned())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
