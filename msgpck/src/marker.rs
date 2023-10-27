@@ -9,7 +9,8 @@ const FIXMAP_SIZE: u8 = 0x0f;
 
 // TODO: Can I trick Rust into using the u8 marker for the variants?
 /// Format markers.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "debug", derive(Debug))]
 pub enum Marker {
     FixPos(u8),
     FixNeg(i8),
@@ -52,6 +53,7 @@ pub enum Marker {
 
 impl Marker {
     /// Construct a msgpack marker from a single byte.
+    #[inline(never)]
     pub fn from_u8(n: u8) -> Marker {
         match n {
             0x00..=0x7f => Marker::FixPos(n),
@@ -96,6 +98,7 @@ impl Marker {
     }
 
     /// Converts a marker object into a single-byte representation.
+    #[inline(never)]
     pub fn to_u8(self) -> u8 {
         match self {
             Marker::FixPos(val) => val,
