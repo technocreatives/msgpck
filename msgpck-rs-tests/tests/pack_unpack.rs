@@ -1,5 +1,6 @@
 use msgpck_rs_tests::*;
 use quickcheck_macros::quickcheck;
+use std::collections::HashMap;
 
 #[quickcheck]
 fn signed_integers(i: i64) {
@@ -69,6 +70,16 @@ fn complex_enum() {
         },
         field2: u32::MAX,
     });
+}
+
+#[quickcheck]
+fn hashmap(v: HashMap<u32, Box<i64>>) {
+    test_pack_unpack(&v);
+}
+
+#[quickcheck]
+fn string(v: String) {
+    test_pack_unpack(&v);
 }
 
 // TODO

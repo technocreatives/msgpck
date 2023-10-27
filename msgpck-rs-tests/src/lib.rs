@@ -55,7 +55,7 @@ where
     let packed_rmp = rmp_serde::to_vec(original).expect("pack value using rmp_serde");
     let packed_msgpck_rs = msgpck_rs::pack_vec(original);
 
-    println!("packed (rmp_serde):    {packed_rmp:x?}");
+    println!("packed (rmp_serde):   {packed_rmp:x?}");
     println!("packed (msgpck_rs):   {packed_msgpck_rs:x?}");
     assert_eq!(
         packed_rmp, packed_msgpck_rs,
@@ -66,7 +66,7 @@ where
     let unpacked_msgpck_rs: T =
         msgpck_rs::unpack_bytes(&packed_msgpck_rs).expect("unpack value using msgpck_rs");
 
-    println!("unpacked (rmp_serde):  {unpacked_rmp:x?}");
+    println!("unpacked (rmp_serde): {unpacked_rmp:x?}");
     println!("unpacked (msgpck_rs): {unpacked_msgpck_rs:x?}");
 
     assert_eq!(
