@@ -5,6 +5,9 @@ use core::str::Utf8Error;
 #[derive(Debug)]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum UnpackErr {
+    #[cfg_attr(feature = "std", error("Buffer overflow"))]
+    BufferOverflow,
+
     #[cfg_attr(feature = "std", error("Unexpected EOF"))]
     UnexpectedEof,
 

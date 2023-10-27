@@ -1,9 +1,9 @@
-use heapless07::{LinearMap, Vec};
-
 use crate::{
     util::{pack_array, pack_map, unpack_array, unpack_map},
-    MsgPack, MsgUnpack, Piece,
+    MsgPack, MsgUnpack, Piece, UnpackErr,
 };
+use core::ops::Deref;
+use heapless07::{LinearMap, String, Vec};
 
 impl<T, const N: usize> MsgPack for Vec<T, N>
 where
@@ -27,6 +27,30 @@ where
         Self: Sized,
     {
         unpack_array(bytes)
+    }
+}
+
+impl<const N: usize> MsgPack for String<N> {
+    type Iter<'a> = impl Iterator<Item = Piece<'a>>
+    where
+        Self: 'a;
+
+    fn pack(&self) -> Self::Iter<'_> {
+        self.deref().pack()
+    }
+}
+
+impl<'buf, const N: usize> MsgUnpack<'buf> for String<N> {
+    fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, crate::UnpackErr>
+    where
+        Self: Sized,
+    {
+        let s: &str = MsgUnpack::unpack(bytes)?;
+        if s.len() > N {
+            Err(UnpackErr::BufferOverflow)
+        } else {
+            Ok(s.into())
+        }
     }
 }
 
