@@ -1,5 +1,5 @@
 mod scalars {
-    use crate::{marker::Marker, utils::slice_take, MsgPck, UnMsgPck, UnpackError};
+    use msgpck::{slice_take, Marker, MsgPck, MsgWriter, PackError, UnMsgPck, UnpackError};
     use proptest::prelude::*;
     use proptest_derive::Arbitrary;
 
@@ -12,7 +12,7 @@ mod scalars {
     }
 
     impl MsgPck for Scalars {
-        fn pack(&self, writer: &mut dyn crate::MsgWriter) -> Result<(), crate::PackError> {
+        fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
             writer.write(&[Marker::FixArray(4).to_u8()])?;
             self.a.pack(writer)?;
             self.b.pack(writer)?;
@@ -23,7 +23,7 @@ mod scalars {
     }
 
     impl<'buf> UnMsgPck<'buf> for Scalars {
-        fn unpack(source: &mut &'buf [u8]) -> Result<Self, crate::UnpackError>
+        fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
         where
             Self: Sized,
         {
@@ -53,7 +53,7 @@ mod scalars {
 }
 
 mod nested {
-    use crate::{marker::Marker, utils::slice_take, MsgPck, UnMsgPck, UnpackError};
+    use msgpck::{slice_take, Marker, MsgPck, MsgWriter, PackError, UnMsgPck, UnpackError};
     use proptest::prelude::*;
     use proptest_derive::Arbitrary;
 
@@ -70,7 +70,7 @@ mod nested {
     }
 
     impl MsgPck for Foo {
-        fn pack(&self, writer: &mut dyn crate::MsgWriter) -> Result<(), crate::PackError> {
+        fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
             writer.write(&[Marker::FixArray(4).to_u8()])?;
             self.a.pack(writer)?;
             self.b.pack(writer)?;
@@ -79,7 +79,7 @@ mod nested {
     }
 
     impl<'buf> UnMsgPck<'buf> for Foo {
-        fn unpack(source: &mut &'buf [u8]) -> Result<Self, crate::UnpackError>
+        fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
         where
             Self: Sized,
         {
@@ -96,7 +96,7 @@ mod nested {
     }
 
     impl MsgPck for Bar {
-        fn pack(&self, writer: &mut dyn crate::MsgWriter) -> Result<(), crate::PackError> {
+        fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
             writer.write(&[Marker::FixArray(4).to_u8()])?;
             self.a.pack(writer)?;
             self.foo.pack(writer)?;
@@ -105,7 +105,7 @@ mod nested {
     }
 
     impl<'buf> UnMsgPck<'buf> for Bar {
-        fn unpack(source: &mut &'buf [u8]) -> Result<Self, crate::UnpackError>
+        fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
         where
             Self: Sized,
         {
