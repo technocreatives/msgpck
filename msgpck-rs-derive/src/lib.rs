@@ -49,16 +49,24 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
 
     let mut encode_body = quote! {};
     let mut generic_bounds = quote! {};
-    let generics = &input.generics.params;
+    let impl_generics = &input.generics.params;
+    let mut struct_generics = quote!();
 
-    for param in generics {
-        generic_bounds.append_all(match param {
-            GenericParam::Type(t) => quote! {
-                #t: ::msgpck_rs::MsgPack,
-            },
-            GenericParam::Lifetime(..) => continue,
+    for param in impl_generics {
+        match param {
+            GenericParam::Lifetime(l) => {
+                let l = &l.lifetime;
+                struct_generics.append_all(quote! { #l, });
+            }
+            GenericParam::Type(t) => {
+                let t = &t.ident;
+                struct_generics.append_all(quote! { #t, });
+                generic_bounds.append_all(quote! {
+                    #t: ::msgpck_rs::MsgPack,
+                });
+            }
             GenericParam::Const(..) => continue,
-        });
+        }
     }
 
     // serialize newtype structs without using array, this is to maintain compatibility with serde
@@ -82,7 +90,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     }
 
     quote! {
-        impl<#generics> msgpck_rs::MsgPack for #struct_name<#generics>
+        impl<#impl_generics> msgpck_rs::MsgPack for #struct_name<#struct_generics>
         where #generic_bounds {
             type Iter<'_msgpack> = impl Iterator<Item = ::msgpck_rs::Piece<'_msgpack>>
             where
@@ -112,18 +120,27 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
 
     let mut unpack_fields = quote! {};
     let mut generic_bounds = quote! {};
-    let generics = &input.generics.params;
+    let impl_generics = &input.generics.params;
+    let mut struct_generics = quote! {};
 
-    for param in generics {
-        generic_bounds.append_all(match param {
-            GenericParam::Lifetime(l) => quote! {
-                '_msgpack: #l,
-            },
-            GenericParam::Type(t) => quote! {
-                #t: ::msgpck_rs::MsgUnpack<'_msgpack>,
-            },
+    for param in impl_generics {
+        match param {
+            GenericParam::Lifetime(l) => {
+                let l = &l.lifetime;
+                struct_generics.append_all(quote! { #l, });
+                generic_bounds.append_all(quote! {
+                    '_msgpack: #l,
+                });
+            }
+            GenericParam::Type(t) => {
+                let t = &t.ident;
+                struct_generics.append_all(quote! { #t, });
+                generic_bounds.append_all(quote! {
+                    #t: ::msgpck_rs::MsgUnpack<'_msgpack>,
+                });
+            }
             GenericParam::Const(..) => continue,
-        });
+        }
     }
 
     for field in data.fields.iter() {
@@ -175,7 +192,7 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     };
 
     quote! {
-        impl<'_msgpack, #generics> ::msgpck_rs::MsgUnpack<'_msgpack> for #struct_name<#generics>
+        impl<'_msgpack, #impl_generics> ::msgpck_rs::MsgUnpack<'_msgpack> for #struct_name<#struct_generics>
         where #generic_bounds {
             fn unpack(bytes: &mut &'_msgpack [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
             where
