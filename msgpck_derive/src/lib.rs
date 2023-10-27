@@ -16,7 +16,7 @@ pub fn derive_pack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         syn::Data::Struct(s) => derive_pack_struct(&input, s),
         syn::Data::Enum(s) => derive_pack_enum(&input, s),
         syn::Data::Union(_) => quote! {
-            compile_error!("derive(MsgPack) is not supported for unions");
+            compile_error!("derive(MsgPck) is not supported for unions");
         },
     }
     .into()
@@ -35,7 +35,7 @@ pub fn derive_unpack(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     .into()
 }
 
-/// Generate impl MsgPack for a struct
+/// Generate impl MsgPck for a struct
 fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     let struct_name = &input.ident;
     let struct_len = data.fields.len();
@@ -43,7 +43,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
-            compile_error!("derive(MsgPack) doesn't support where-clauses for structs");
+            compile_error!("derive(MsgPck) doesn't support where-clauses for structs");
         };
     }
 
@@ -62,7 +62,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                 let t = &t.ident;
                 struct_generics.append_all(quote! { #t, });
                 generic_bounds.append_all(quote! {
-                    #t: ::msgpck::MsgPack,
+                    #t: ::msgpck::MsgPck,
                 });
             }
             GenericParam::Const(..) => continue,
@@ -84,8 +84,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                 span: field.span(),
             })
         });
-        let span = member.span();
-        encode_body.append_all(quote_spanned! { span =>
+        encode_body.append_all(quote_spanned! { member.span() =>
             self.#member.pack(writer)?;
         });
     }
@@ -125,14 +124,14 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                 let l = &l.lifetime;
                 struct_generics.append_all(quote! { #l, });
                 generic_bounds.append_all(quote! {
-                    '_msgpack: #l,
+                    '_MsgPck: #l,
                 });
             }
             GenericParam::Type(t) => {
                 let t = &t.ident;
                 struct_generics.append_all(quote! { #t, });
                 generic_bounds.append_all(quote! {
-                    #t: ::msgpck::UnMsgPck<'_msgpack>,
+                    #t: ::msgpck::UnMsgPck<'_MsgPck>,
                 });
             }
             GenericParam::Const(..) => continue,
@@ -141,13 +140,11 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
 
     for field in data.fields.iter() {
         if let Some(ident) = &field.ident {
-            let span = field.span();
-            unpack_fields.append_all(quote_spanned! { span =>
+            unpack_fields.append_all(quote_spanned! { field.span() =>
                 #ident: UnMsgPck::unpack(bytes)?,
             });
         } else {
-            let span = field.span();
-            unpack_fields.append_all(quote_spanned! { span =>
+            unpack_fields.append_all(quote_spanned! { field.span() =>
                 UnMsgPck::unpack(bytes)?,
             });
         }
@@ -198,9 +195,9 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     };
 
     quote! {
-        impl<'_msgpack, #impl_generics> ::msgpck::UnMsgPck<'_msgpack> for #struct_name<#struct_generics>
+        impl<'_MsgPck, #impl_generics> ::msgpck::UnMsgPck<'_MsgPck> for #struct_name<#struct_generics>
         where #generic_bounds {
-            fn unpack(bytes: &mut &'_msgpack [u8]) -> ::std::result::Result<Self, ::msgpck::UnpackError>
+            fn unpack(bytes: &mut &'_MsgPck [u8]) -> ::std::result::Result<Self, ::msgpck::UnpackError>
             where
                 Self: Sized,
             {
@@ -263,26 +260,23 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         let validate_type = match variant.fields.len() {
             0 => quote! {
                 if !header.unit {
-                    return Err(UnpackErr::UnexpectedUnitVariant);
+                    return Err(UnpackError::UnexpectedUnitVariant);
                 }
             },
             1 => quote! {
                 if header.unit {
-                    return Err(UnpackErr::ExpectedUnitVariant);
+                    return Err(UnpackError::ExpectedUnitVariant);
                 }
             },
             n => quote! {
                 if header.unit {
-                    return Err(UnpackErr::ExpectedUnitVariant);
+                    return Err(UnpackError::ExpectedUnitVariant);
                 }
 
                 let array_len = unpack_array_header(bytes)?;
 
                 if array_len < #n {
-                    return Err(UnpackErr::MissingFields {
-                        expected: #n,
-                        got: array_len,
-                    });
+                    return Err(UnpackError::MissingFields);
                 };
 
                 if array_len > #n {
@@ -330,46 +324,42 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
     quote! {
         impl<'buf> ::msgpck::UnMsgPck<'buf> for #enum_name {
-            fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpck::UnpackErr>
+            fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpck::UnpackError>
             where
                 Self: Sized + 'buf,
             {
-                use ::msgpck::{UnpackErr, Variant::*, UnMsgPck};
-                use ::msgpck::helpers::{unpack_enum_header, unpack_array_header};
+                use ::msgpck::{UnpackError, Variant::*, UnMsgPck, unpack_enum_header, unpack_array_header};
 
                 let header = unpack_enum_header(bytes)?;
 
                 Ok(match &header.variant {
                     #unpack_variants
-                    _unknown_variant => return Err(UnpackErr::UnknownVariant)
+                    _unknown_variant => return Err(UnpackError::UnknownVariant)
                 })
             }
         }
     }
 }
 
-/// Generate impl MsgPack for an enum
+/// Generate impl MsgPck for an enum
 fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     let enum_name = &input.ident;
 
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
-            compile_error!("derive(MsgPack) doesn't support where-clauses for enums");
+            compile_error!("derive(MsgPck) doesn't support where-clauses for enums");
         };
     }
 
     if !input.generics.params.is_empty() {
         return quote_spanned! {
             input.generics.params.span() =>
-            compile_error!("derive(MsgPack) doesn't support generics for enums");
+            compile_error!("derive(MsgPck) doesn't support generics for enums");
         };
     }
 
     let mut iter_enum_generics = quote! {};
-    let mut iter_enum_variants = quote! {};
-    let mut iter_enum_bounds = quote! {};
-    let mut iter_enum_match = quote! {};
     let mut pack_variants = quote! {};
 
     for variant in &data.variants {
@@ -397,12 +387,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         //}
 
         // generate stuff for the iterator enum
-        iter_enum_generics.append_all(quote! {#variant_name,});
-        iter_enum_variants.append_all(quote! {#variant_name(#variant_name),});
-        iter_enum_bounds.append_all(quote! {#variant_name: Iterator<Item = ::msgpck::Piece<'a>>,});
-        iter_enum_match.append_all(quote! {
-            Self::#variant_name(inner_iter) => inner_iter.next(),
-        });
+        iter_enum_generics.append_all(quote_spanned! { variant.span() => #variant_name,});
 
         // generate the actual iterator
 
@@ -420,7 +405,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 let fields_len = fields.named.len();
                 if fields_len > 1 {
                     pack_fields.append_all(quote! {
-                        ::msgpck::pack_array_header(writer, #fields_len);
+                        ::msgpck::pack_array_header(writer, #fields_len)?;
                     });
                 }
 
@@ -429,11 +414,11 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 for field in &fields.named {
                     let field_name = &field.ident;
                     // pattern match all the fields
-                    match_fields.append_all(quote! {#field_name, });
+                    match_fields.append_all(quote_spanned! { field.span() => #field_name, });
 
                     // pack all the named fields
-                    pack_fields.append_all(quote! {
-                        .chain(#field_name.pack())
+                    pack_fields.append_all(quote_spanned! { field.span() =>
+                        #field_name.pack(writer)?;
                     })
                 }
 
@@ -445,7 +430,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 let fields_len = fields.unnamed.len();
                 if fields_len > 1 {
                     pack_fields.append_all(quote! {
-                        .chain(::msgpck::helpers::pack_array_header(#fields_len))
+                        ::msgpck::pack_array_header(writer, #fields_len)?;
                     });
                 }
 
@@ -454,12 +439,12 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 for (i, field) in fields.unnamed.iter().enumerate() {
                     let field_name = Ident::new(&format!("_{i}"), field.span());
                     // pattern match all the fields
-                    match_fields.append_all(quote! {#field_name, });
+                    match_fields.append_all(quote! { #field_name, });
 
                     // pack all the fields
                     pack_fields.append_all(quote! {
-                        .chain(#field_name.pack())
-                    })
+                        #field_name.pack(writer)?;
+                    });
                 }
 
                 // wrap fields pattern in parentheses
@@ -480,12 +465,13 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     }
 
     quote! {
-        impl ::msgpck::MsgPack for #enum_name {
+        impl ::msgpck::MsgPck for #enum_name {
             fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> Result<(), ::msgpck::PackError> {
-                use ::msgpck::MsgPack;
+                use ::msgpck::MsgPck;
                 match self {
                     #pack_variants
                 }
+                Ok(())
             }
         }
     }

@@ -1,4 +1,4 @@
-use crate::{marker::Marker, PackError, UnpackError};
+use crate::{marker::Marker, EnumHeader, PackError, UnMsgPck, UnpackError, Variant};
 
 pub fn slice_take<'a, T, const N: usize>(
     s: &mut &'a [T],
@@ -34,6 +34,54 @@ pub fn pack_array_header<'a>(
         }
     };
     Ok(())
+}
+
+/// Unpack an enum header.
+///
+/// **NOTE**: This function does not necessarily unpack a complete msgpack value.
+/// In the case of an enum with fields, the next value unpacked must be the fields of the enum.
+pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, UnpackError> {
+    match Marker::from_u8(bytes[0]) {
+        // if the enum is just a string or an int, it doesn't have any fields.
+        // decode the discriminant/name and return early.
+        Marker::FixStr(..) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
+            return Ok(EnumHeader {
+                variant: Variant::Name(UnMsgPck::unpack(bytes)?),
+                unit: true,
+            });
+        }
+        Marker::FixPos(..) | Marker::U8 | Marker::U16 | Marker::U32 | Marker::U64 => {
+            return Ok(EnumHeader {
+                variant: Variant::Discriminant(UnMsgPck::unpack(bytes)?),
+                unit: true,
+            });
+        }
+
+        // if the enum is a map, it has at least 1 field.
+        Marker::FixMap(_) | Marker::Map16 | Marker::Map32 => {
+            let len = unpack_map_header(bytes)?;
+            if len != 1 {
+                todo!("error on invalid enum map")
+            }
+        }
+        m => return Err(UnpackError::WrongMarker(m)),
+    }
+
+    // read the discriminant/name from the map key
+    let variant = match Marker::from_u8(bytes[0]) {
+        Marker::FixPos(..) | Marker::U8 | Marker::U16 | Marker::U32 | Marker::U64 => {
+            Variant::Discriminant(UnMsgPck::unpack(bytes)?)
+        }
+        Marker::FixStr(..) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
+            Variant::Name(UnMsgPck::unpack(bytes)?)
+        }
+        m => return Err(UnpackError::WrongMarker(m)),
+    };
+
+    Ok(EnumHeader {
+        variant,
+        unit: false,
+    })
 }
 
 /// Helper function that tries to decode a msgpack array header from a byte slice.
