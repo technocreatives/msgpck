@@ -56,9 +56,7 @@ mod impl_collections;
 pub use enums::{EnumHeader, Variant};
 pub use error::UnpackErr;
 pub use msgpck_rs_derive::{MsgPack, MsgUnpack};
-#[cfg(feature = "alloc")]
-pub use packers::pack_vec;
-pub use packers::unpack_bytes;
+pub use packers::*;
 pub use piece::Piece;
 pub use rmp::Marker;
 
