@@ -85,7 +85,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
             })
         });
         encode_body.append_all(quote_spanned! { member.span() =>
-            self.#member.pack(writer)?;
+            ::msgpck::MsgPck::pack(&self.#member, writer)?;
         });
     }
 
@@ -418,7 +418,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
                     // pack all the named fields
                     pack_fields.append_all(quote_spanned! { field.span() =>
-                        #field_name.pack(writer)?;
+                        ::msgpck::MsgPck::pack(&#field_name, writer)?;
                     })
                 }
 
@@ -443,7 +443,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
                     // pack all the fields
                     pack_fields.append_all(quote! {
-                        #field_name.pack(writer)?;
+                        ::msgpck::MsgPck::pack(&#field_name, writer)?;
                     });
                 }
 
@@ -455,10 +455,10 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
         pack_variants.append_all(quote! {
             Self::#variant_name #match_fields => {
-                ::msgpck::EnumHeader {
+                ::msgpck::MsgPck::pack(&::msgpck::EnumHeader {
                     variant: #variant_name_str.into(),
                     unit: #unit,
-                }.pack(writer)?;
+                }, writer)?;
                 #pack_fields
             }
         });
@@ -467,7 +467,6 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     quote! {
         impl ::msgpck::MsgPck for #enum_name {
             fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> Result<(), ::msgpck::PackError> {
-                use ::msgpck::MsgPck;
                 match self {
                     #pack_variants
                 }
