@@ -9,7 +9,7 @@ impl MsgPack for str {
     fn pack(&self) -> Self::Iter<'_> {
         iter::from_generator(move || {
             match self.len() {
-                ..=0xf => yield Marker::FixStr(self.len() as u8).into(),
+                ..=0x1f => yield Marker::FixStr(self.len() as u8).into(),
                 ..=0xff => {
                     yield Marker::Str8.into();
                     yield (self.len() as u8).into();
