@@ -19,6 +19,7 @@ pub enum UnpackError {
     #[cfg(not(feature = "debug"))]
     Utf8Error,
 
+    // TODO: Make this work with derive
     // #[cfg(feature = "debug")]
     // MissingFields {
     //     got: usize,
@@ -27,6 +28,7 @@ pub enum UnpackError {
     // #[cfg(not(feature = "debug"))]
     MissingFields,
 
+    // TODO: Make this work with derive
     // #[cfg(feature = "debug")]
     // TooManyFields {
     //     got: usize,
@@ -34,6 +36,10 @@ pub enum UnpackError {
     // },
     // #[cfg(not(feature = "debug"))]
     TooManyFields,
+
+    UnexpectedUnitVariant,
+    ExpectedUnitVariant,
+    UnknownVariant,
 }
 
 impl From<TryFromIntError> for UnpackError {

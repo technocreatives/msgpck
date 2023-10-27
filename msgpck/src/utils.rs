@@ -49,3 +49,18 @@ pub fn pack_map_header<'a>(writer: &mut dyn crate::MsgWriter, len: usize) -> Res
     }
     Ok(())
 }
+
+/// Helper function that tries to decode a msgpack map header from a byte slice.
+///
+/// ## Returns
+/// The length of the map.
+pub fn unpack_map_header(bytes: &mut &[u8]) -> Result<usize, UnpackError> {
+    let &[b] = slice_take(bytes)?;
+
+    Ok(match Marker::from_u8(b) {
+        Marker::FixMap(len) => len.into(),
+        Marker::Map16 => u16::from_be_bytes(*slice_take(bytes)?).into(),
+        Marker::Map32 => u32::from_be_bytes(*slice_take(bytes)?).try_into()?,
+        m => return Err(UnpackError::WrongMarker(m)),
+    })
+}
