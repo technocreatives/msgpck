@@ -10,3 +10,6 @@ pub use crate::{
     unpack::{UnMsgPck, UnpackError},
     writers::MsgWriter,
 };
+
+#[cfg(test)]
+mod tests;

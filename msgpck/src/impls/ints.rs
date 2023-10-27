@@ -22,6 +22,24 @@ macro_rules! impl_msgpck_for_int {
                     })
                 }
             }
+
+            #[cfg(test)]
+            paste::paste! {
+                mod [<test_ $t>] {
+                    use super::*;
+                    use proptest::prelude::*;
+
+                    proptest! {
+                        #[test]
+                        fn test_foo(s: $t) {
+                            let mut writer: Vec<_> = Vec::new();
+                            s.pack(&mut writer).unwrap();
+                            let d = <$t>::unpack(&mut &writer[..]).unwrap();
+                            assert_eq!(s, d);
+                        }
+                    }
+                }
+            }
         )*
     };
     () => {
@@ -47,6 +65,24 @@ macro_rules! impl_msgpck_for_uint {
                         helpers::NumValueReadError::TypeMismatch(m) => UnpackError::WrongMarker(m),
                         _ => UnpackError::UnexpectedEof,
                     })
+                }
+            }
+
+            #[cfg(test)]
+            paste::paste! {
+                mod [<test_ $t>] {
+                    use super::*;
+                    use proptest::prelude::*;
+
+                    proptest! {
+                        #[test]
+                        fn test_foo(s: $t) {
+                            let mut writer: Vec<_> = Vec::new();
+                            s.pack(&mut writer).unwrap();
+                            let d = <$t>::unpack(&mut &writer[..]).unwrap();
+                            assert_eq!(s, d);
+                        }
+                    }
                 }
             }
         )*
