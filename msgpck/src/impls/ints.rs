@@ -67,7 +67,7 @@ mod helpers {
     // TODO: Use real small numbers
     #[inline(never)]
     pub fn dummy_write_i64(writer: &mut dyn MsgWriter, val: i64) -> Result<(), WriteError> {
-        writer.write(&[Marker::U64.to_u8()])?;
+        writer.write(&[Marker::I64.to_u8()])?;
         writer.write(&val.to_be_bytes())?;
         Ok(())
     }
