@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 0f72e116be1150abd9028991d0c901cc2a04f0b3711bd3575e587a76dc8f785c # shrinks to data = Baz("", "")

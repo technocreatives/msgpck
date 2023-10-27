@@ -6,7 +6,7 @@ use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned, TokenStreamExt};
 use syn::{
     parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput, Fields, GenericParam,
-    Index, Member,
+    Ident, Index, Member,
 };
 
 #[proc_macro_derive(MsgPck)]
@@ -14,9 +14,7 @@ pub fn derive_pack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
         syn::Data::Struct(s) => derive_pack_struct(&input, s),
-        syn::Data::Enum(_s) => quote! {
-            compile_error!("derive(MsgPack) is not supported for enums yet");
-        },
+        syn::Data::Enum(s) => derive_pack_enum(&input, s),
         syn::Data::Union(_) => quote! {
             compile_error!("derive(MsgPack) is not supported for unions");
         },
@@ -350,7 +348,6 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     }
 }
 
-/*
 /// Generate impl MsgPack for an enum
 fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     let enum_name = &input.ident;
@@ -402,8 +399,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         // generate stuff for the iterator enum
         iter_enum_generics.append_all(quote! {#variant_name,});
         iter_enum_variants.append_all(quote! {#variant_name(#variant_name),});
-        iter_enum_bounds
-            .append_all(quote! {#variant_name: Iterator<Item = ::msgpck::Piece<'a>>,});
+        iter_enum_bounds.append_all(quote! {#variant_name: Iterator<Item = ::msgpck::Piece<'a>>,});
         iter_enum_match.append_all(quote! {
             Self::#variant_name(inner_iter) => inner_iter.next(),
         });
@@ -424,7 +420,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 let fields_len = fields.named.len();
                 if fields_len > 1 {
                     pack_fields.append_all(quote! {
-                        .chain(::msgpck::helpers::pack_array_header(#fields_len))
+                        ::msgpck::pack_array_header(writer, #fields_len);
                     });
                 }
 
@@ -474,44 +470,19 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
         pack_variants.append_all(quote! {
             Self::#variant_name #match_fields => {
-                __MsgpackerIter::#variant_name(
-                    ::msgpck::helpers::pack_enum_header(::msgpck::EnumHeader {
-                        variant: #variant_name_str.into(),
-                        unit: #unit,
-                    })
-                    #pack_fields
-                )
+                ::msgpck::EnumHeader {
+                    variant: #variant_name_str.into(),
+                    unit: #unit,
+                }.pack(writer)?;
+                #pack_fields
             }
         });
     }
 
     quote! {
         impl ::msgpck::MsgPack for #enum_name {
-            type Iter<'a> = impl Iterator<Item = ::msgpck::Piece<'a>>
-            where
-                Self: 'a;
-
-            fn pack(&self) -> Self::Iter<'_> {
-
-                // Because we need different msgpack iterator types for each variant, we need an
-                // enum type that impls Iterator to contain them. To avoid naming the inner iterator
-                // types, we use generics. It's not the prettiest, but it works.
-                enum __MsgpackerIter<#iter_enum_generics> {
-                    #iter_enum_variants
-                }
-
-                impl<'a, #iter_enum_bounds> Iterator for __MsgpackerIter<#iter_enum_generics> {
-                    type Item = ::msgpck::Piece<'a>;
-
-                    // the implementation of next simply forwards to the inner iterators
-                    fn next(&mut self) -> Option<Self::Item> {
-                        match self {
-                            #iter_enum_match
-                        }
-                    }
-                }
-
-                // This match statment returns a __MsgpackerIter
+            fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> Result<(), ::msgpck::PackError> {
+                use ::msgpck::MsgPack;
                 match self {
                     #pack_variants
                 }
@@ -519,7 +490,6 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         }
     }
 }
-*/
 
 fn array_len_iter(len: usize) -> TokenStream {
     match len {
