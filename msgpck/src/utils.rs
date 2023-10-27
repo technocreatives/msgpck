@@ -15,6 +15,27 @@ pub fn slice_take<'a, T, const N: usize>(
 
 pub struct UnexpectedEofError;
 
+/// Helper function that packs a msgpack array header.
+///
+/// **NOTE**: Values of the array are not included, and must therefore be packed next.
+pub fn pack_array_header<'a>(
+    writer: &mut dyn crate::MsgWriter,
+    len: usize,
+) -> Result<(), PackError> {
+    match len {
+        ..=0xf => writer.write(&[Marker::FixArray(len as u8).to_u8()])?,
+        0x10..=0xffff => {
+            writer.write(&[Marker::Array16.to_u8()])?;
+            writer.write(&((len as u16).to_be_bytes()))?;
+        }
+        _ => {
+            writer.write(&[Marker::Array32.to_u8()])?;
+            writer.write(&((len as u32).to_be_bytes()))?;
+        }
+    };
+    Ok(())
+}
+
 /// Helper function that tries to decode a msgpack array header from a byte slice.
 ///
 /// **NOTE**: This doesn't decode the elements of the array, they need to be decoded next.

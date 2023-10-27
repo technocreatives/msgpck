@@ -9,7 +9,7 @@ pub use crate::{
     marker::Marker,
     pack::{MsgPck, PackError},
     unpack::{UnMsgPck, UnpackError},
-    utils::{slice_take, unpack_array_header},
+    utils::{pack_array_header, slice_take, unpack_array_header},
     writers::MsgWriter,
 };
 

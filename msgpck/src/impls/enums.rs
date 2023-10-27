@@ -147,6 +147,8 @@ mod tests_simple {
 
 #[cfg(test)]
 mod tests_nested {
+    use crate::{pack_array_header, unpack_array_header};
+
     use super::*;
     use proptest::prelude::*;
     use proptest_derive::Arbitrary;
@@ -154,7 +156,7 @@ mod tests_nested {
     #[derive(Debug, PartialEq, Arbitrary)]
     enum Foo {
         Bar { x: i8 },
-        Baz(String),
+        Baz(String, String),
         Nope,
     }
 
@@ -169,13 +171,15 @@ mod tests_nested {
                     .pack(writer)?;
                     x.pack(writer)?;
                 }
-                Foo::Baz(s) => {
+                Foo::Baz(s1, s2) => {
                     EnumHeader {
                         variant: Variant::Name("Baz"),
                         unit: false,
                     }
                     .pack(writer)?;
-                    s.pack(writer)?;
+                    pack_array_header(writer, 2)?;
+                    s1.pack(writer)?;
+                    s2.pack(writer)?;
                 }
                 Foo::Nope => EnumHeader {
                     variant: Variant::Name("Nope"),
@@ -206,7 +210,13 @@ mod tests_nested {
                     if header.unit {
                         return Err(UnpackError::UnexpectedUnitVariant);
                     }
-                    Ok(Self::Baz(UnMsgPck::unpack(source)?))
+                    if unpack_array_header(source)? != 2 {
+                        return Err(UnpackError::UnknownVariant); // TODO: better error variant?
+                    };
+                    Ok(Self::Baz(
+                        UnMsgPck::unpack(source)?,
+                        UnMsgPck::unpack(source)?,
+                    ))
                 }
                 Variant::Name("Nope") => {
                     if !header.unit {
