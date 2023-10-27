@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 msgpck-rs-derive = { path = "../msgpck-rs-derive" }
 thiserror = { version = "1.0.50", optional = true }
+heapless07 = { package = "heapless", version = "0.7.16", optional = true }
 
 [features]
 alloc = []

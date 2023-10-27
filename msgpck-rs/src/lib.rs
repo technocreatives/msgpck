@@ -40,19 +40,26 @@ extern crate alloc;
 
 mod enums;
 mod error;
+mod marker;
+mod packers;
+mod piece;
+mod util;
+
 mod impl_bool;
 mod impl_bytes;
 mod impl_floats;
 mod impl_ints;
 mod impl_strings;
 mod impl_uints;
-mod marker;
-mod packers;
-mod piece;
-mod util;
 
 #[cfg(feature = "alloc")]
-mod impl_collections;
+mod impl_alloc;
+
+#[cfg(feature = "std")]
+mod impl_std;
+
+#[cfg(feature = "heapless07")]
+mod impl_heapless;
 
 pub use enums::{EnumHeader, Variant};
 pub use error::UnpackErr;

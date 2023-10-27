@@ -1,4 +1,6 @@
-use crate::{marker::Marker, Piece, UnpackErr};
+#![allow(dead_code)]
+
+use crate::{marker::Marker, MsgPack, MsgUnpack, Piece, UnpackErr};
 use core::iter;
 
 pub fn slice_take<'a, T, const N: usize>(s: &mut &'a [T]) -> Result<&'a [T; N], UnpackErr> {
@@ -78,4 +80,56 @@ pub fn unpack_map_header(bytes: &mut &[u8]) -> Result<usize, UnpackErr> {
         Marker::Map32 => u32::from_be_bytes(*slice_take(bytes)?).try_into()?,
         m => return Err(UnpackErr::WrongMarker(m)),
     })
+}
+
+pub fn pack_map<'a, K, V>(
+    len: usize,
+    kvs: impl Iterator<Item = (&'a K, &'a V)> + 'a,
+) -> impl Iterator<Item = Piece<'a>> + 'a
+where
+    K: MsgPack + 'a,
+    V: MsgPack + 'a,
+{
+    pack_map_header(len).chain(kvs.flat_map(|(k, v)| k.pack().chain(v.pack())))
+}
+
+pub fn unpack_map<'a, K, V, C>(bytes: &mut &'a [u8]) -> Result<C, UnpackErr>
+where
+    K: MsgUnpack<'a>,
+    V: MsgUnpack<'a>,
+    C: FromIterator<(K, V)>,
+{
+    let len = unpack_map_header(bytes)?;
+
+    // sanity check
+    // make sure that it's plausible the array could contain this many elements
+    if bytes.len() < len {
+        return Err(UnpackErr::UnexpectedEof);
+    }
+
+    (0..len)
+        .map(move |_| {
+            let k = K::unpack(bytes)?;
+            let v = V::unpack(bytes)?;
+            Ok((k, v))
+        })
+        .collect()
+}
+
+pub fn pack_array<'a, T>(
+    len: usize,
+    elements: impl Iterator<Item = &'a T> + 'a,
+) -> impl Iterator<Item = Piece<'a>> + 'a
+where
+    T: MsgPack + 'a,
+{
+    pack_array_header(len).chain(elements.flat_map(|elem| elem.pack()))
+}
+pub fn unpack_array<'a, T, C>(bytes: &mut &'a [u8]) -> Result<C, UnpackErr>
+where
+    T: MsgUnpack<'a>,
+    C: FromIterator<T>,
+{
+    let len = unpack_array_header(bytes)?;
+    (0..len).map(move |_| T::unpack(bytes)).collect()
 }
