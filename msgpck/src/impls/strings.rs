@@ -53,11 +53,15 @@ impl<'buf> UnMsgPck<'buf> for &'buf str {
 }
 
 #[cfg(feature = "alloc")]
+impl MsgPck for String {
+    fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
+        self.as_str().pack(writer)
+    }
+}
+
+#[cfg(feature = "alloc")]
 impl<'buf> UnMsgPck<'buf> for String {
-    fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
-    where
-        Self: Sized,
-    {
+    fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError> {
         <&str>::unpack(source).map(|s| s.to_owned())
     }
 }
