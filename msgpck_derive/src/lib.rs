@@ -93,7 +93,6 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
         impl<#impl_generics> msgpck::MsgPck for #struct_name<#struct_generics>
         where #generic_bounds {
             fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> ::std::result::Result<(), ::msgpck::PackError> {
-                use ::msgpck::Marker;
                 #encode_body
                 Ok(())
             }
@@ -480,19 +479,19 @@ fn array_len_iter(len: usize) -> TokenStream {
     match len {
         ..=0xf => {
             let len = len as u8;
-            quote! { writer.write(&[Marker::FixArray(#len).to_u8()])?; }
+            quote! { writer.write(&[::msgpck::Marker::FixArray(#len).to_u8()])?; }
         }
         ..=0xffff => {
             let len = len as u16;
             quote! {
-                writer.write(&[Marker::Array16.to_u8()])?;
+                writer.write(&[::msgpck::Marker::Array16.to_u8()])?;
                 writer.write(&((#len as u16).to_be_bytes()))?;
             }
         }
         _ => {
             let len = len as u32;
             quote! {
-                writer.write(&[Marker::Array32.to_u8()])?;
+                writer.write(&[::msgpck::Marker::Array32.to_u8()])?;
                 writer.write(&((#len as u32).to_be_bytes()))?;
             }
         }
