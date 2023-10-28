@@ -26,6 +26,16 @@ impl MsgPck for str {
         writer.write(self.as_bytes())?;
         Ok(())
     }
+
+    fn size_hint(&self) -> (Option<usize>, Option<usize>) {
+        let header = match self.len() {
+            ..=0x1f => 1,
+            0x20..=0xff => 2,
+            0x100..=0xffff => 3,
+            _ => 5,
+        };
+        (Some(self.len() + header), Some(self.len() + header))
+    }
 }
 
 impl<'buf> UnMsgPck<'buf> for &'buf str {

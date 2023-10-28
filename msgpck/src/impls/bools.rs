@@ -1,3 +1,5 @@
+use std::mem::size_of;
+
 use crate::{marker::Marker, utils::slice_take, *};
 
 impl MsgPck for bool {
@@ -5,6 +7,10 @@ impl MsgPck for bool {
         let data = if *self { Marker::True } else { Marker::False };
         writer.write(&[data.to_u8()])?;
         Ok(())
+    }
+
+    fn size_hint(&self) -> (Option<usize>, Option<usize>) {
+        (Some(size_of::<Self>()), Some(size_of::<Self>()))
     }
 }
 

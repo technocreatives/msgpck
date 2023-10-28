@@ -1,4 +1,5 @@
 use crate::{pack::PackError, writers::MsgWriter, MsgPck, UnMsgPck, UnpackError};
+use std::mem::size_of;
 
 use self::helpers::read_int;
 
@@ -8,6 +9,10 @@ macro_rules! impl_msgpck_for_int {
             impl MsgPck for $t {
                 fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
                     Ok(helpers::dummy_write_i64(writer, *self as i64)?)
+                }
+
+                fn size_hint(&self) -> (Option<usize>, Option<usize>) {
+                    (Some(size_of::<Self>()), Some(size_of::<Self>() + 1))
                 }
             }
 
@@ -53,6 +58,10 @@ macro_rules! impl_msgpck_for_uint {
             impl MsgPck for $t {
                 fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
                     Ok(helpers::dummy_write_u64(writer, *self as u64)?)
+                }
+
+                fn size_hint(&self) -> (Option<usize>, Option<usize>) {
+                    (Some(size_of::<Self>()), Some(size_of::<Self>() + 1))
                 }
             }
 

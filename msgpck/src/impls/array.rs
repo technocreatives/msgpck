@@ -21,4 +21,13 @@ impl<'a, T: MsgPck> MsgPck for &'a [T] {
         }
         Ok(())
     }
+
+    fn size_hint(&self) -> (Option<usize>, Option<usize>) {
+        let header = match self.len() {
+            ..=0xff => 1,
+            0x100..=0xffff => 3,
+            _ => 5,
+        };
+        (Some(self.len() + header), Some(self.len() + header))
+    }
 }
