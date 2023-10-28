@@ -1,0 +1,39 @@
+error[E0601]: `main` function not found in crate `$CRATE`
+  --> tests/ui/missing_impl.rs:12:2
+   |
+12 | }
+   |  ^ consider adding a `main` function to `$DIR/tests/ui/missing_impl.rs`
+
+error[E0277]: the trait bound `Foo: MsgPck` is not satisfied
+  --> tests/ui/missing_impl.rs:11:5
+   |
+11 |     foo: Foo,
+   |     ^^^^^^^^ the trait `MsgPck` is not implemented for `Foo`
+   |
+   = help: the following other types implement trait `MsgPck`:
+             bool
+             isize
+             i8
+             i16
+             i32
+             i64
+             usize
+             u8
+           and $N others
+
+error[E0277]: the trait bound `Foo: UnMsgPck<'_>` is not satisfied
+  --> tests/ui/missing_impl.rs:11:5
+   |
+11 |     foo: Foo,
+   |     ^^^^^^^^ the trait `UnMsgPck<'_>` is not implemented for `Foo`
+   |
+   = help: the following other types implement trait `UnMsgPck<'buf>`:
+             <bool as UnMsgPck<'buf>>
+             <isize as UnMsgPck<'buf>>
+             <i8 as UnMsgPck<'buf>>
+             <i16 as UnMsgPck<'buf>>
+             <i32 as UnMsgPck<'buf>>
+             <i64 as UnMsgPck<'buf>>
+             <usize as UnMsgPck<'buf>>
+             <u8 as UnMsgPck<'buf>>
+           and $N others
