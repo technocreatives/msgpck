@@ -84,7 +84,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                 span: field.span(),
             })
         });
-        encode_body.append_all(quote_spanned! { member.span() =>
+        encode_body.append_all(quote_spanned! { field.span() =>
             ::msgpck::MsgPck::pack(&self.#member, writer)?;
         });
     }
