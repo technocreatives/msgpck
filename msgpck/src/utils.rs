@@ -18,10 +18,7 @@ pub struct UnexpectedEofError;
 /// Helper function that packs a msgpack array header.
 ///
 /// **NOTE**: Values of the array are not included, and must therefore be packed next.
-pub fn pack_array_header<'a>(
-    writer: &mut dyn crate::MsgWriter,
-    len: usize,
-) -> Result<(), PackError> {
+pub fn pack_array_header(writer: &mut dyn crate::MsgWriter, len: usize) -> Result<(), PackError> {
     match len {
         ..=0xf => writer.write(&[Marker::FixArray(len as u8).to_u8()])?,
         0x10..=0xffff => {
@@ -104,7 +101,7 @@ pub fn unpack_array_header(source: &mut &[u8]) -> Result<usize, UnpackError> {
 /// Helper function that packs a msgpack map header.
 ///
 /// **NOTE**: Keys and values of the map are not included, and must therefore be packed next.
-pub fn pack_map_header<'a>(writer: &mut dyn crate::MsgWriter, len: usize) -> Result<(), PackError> {
+pub fn pack_map_header(writer: &mut dyn crate::MsgWriter, len: usize) -> Result<(), PackError> {
     match len {
         ..=0xf => writer.write(&[Marker::FixMap(len as u8).to_u8()])?,
         0x10..=0xffff => {
