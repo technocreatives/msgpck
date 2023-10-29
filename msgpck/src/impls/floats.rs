@@ -1,6 +1,8 @@
 use std::mem::size_of;
 
-use crate::{marker::Marker, utils::slice_take, MsgPck, PackError, UnMsgPck, UnpackError};
+use crate::{
+    marker::Marker, pack::SizeHint, utils::slice_take, MsgPck, PackError, UnMsgPck, UnpackError,
+};
 
 impl MsgPck for f32 {
     fn pack(&self, writer: &mut dyn crate::MsgWriter) -> Result<(), PackError> {
@@ -9,8 +11,11 @@ impl MsgPck for f32 {
         Ok(())
     }
 
-    fn size_hint(&self) -> (Option<usize>, Option<usize>) {
-        (Some(size_of::<Self>() + 1), Some(size_of::<Self>() + 1))
+    fn size_hint(&self) -> SizeHint {
+        SizeHint {
+            min: Some(size_of::<Self>() + 1),
+            max: Some(size_of::<Self>() + 1),
+        }
     }
 }
 
@@ -37,8 +42,11 @@ impl MsgPck for f64 {
         Ok(())
     }
 
-    fn size_hint(&self) -> (Option<usize>, Option<usize>) {
-        (Some(size_of::<Self>() + 1), Some(size_of::<Self>() + 1))
+    fn size_hint(&self) -> SizeHint {
+        SizeHint {
+            min: Some(size_of::<Self>() + 1),
+            max: Some(size_of::<Self>() + 1),
+        }
     }
 }
 

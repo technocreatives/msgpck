@@ -1,4 +1,4 @@
-use crate::MsgPck;
+use crate::{pack::SizeHint, MsgPck};
 
 impl<'r, T> MsgPck for &'r T
 where
@@ -8,7 +8,7 @@ where
         (**self).pack(writer)
     }
 
-    fn size_hint(&self) -> (Option<usize>, Option<usize>) {
+    fn size_hint(&self) -> SizeHint {
         (**self).size_hint()
     }
 }
@@ -21,7 +21,7 @@ where
         (**self).pack(writer)
     }
 
-    fn size_hint(&self) -> (Option<usize>, Option<usize>) {
+    fn size_hint(&self) -> SizeHint {
         (**self).size_hint()
     }
 }

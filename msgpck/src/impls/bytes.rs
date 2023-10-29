@@ -1,5 +1,6 @@
 use crate::{
-    marker::Marker, utils::slice_take, writers::MsgWriter, MsgPck, PackError, UnMsgPck, UnpackError,
+    marker::Marker, pack::SizeHint, utils::slice_take, writers::MsgWriter, MsgPck, PackError,
+    UnMsgPck, UnpackError,
 };
 
 impl MsgPck for [u8] {
@@ -22,13 +23,16 @@ impl MsgPck for [u8] {
         Ok(())
     }
 
-    fn size_hint(&self) -> (Option<usize>, Option<usize>) {
+    fn size_hint(&self) -> SizeHint {
         let header = match self.len() {
             ..=0xff => 1,
             0x100..=0xffff => 3,
             _ => 5,
         };
-        (Some(self.len() + header), Some(self.len() + header))
+        SizeHint {
+            min: Some(self.len() + header),
+            max: Some(self.len() + header),
+        }
     }
 }
 

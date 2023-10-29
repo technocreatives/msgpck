@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use crate::{marker::Marker, utils::slice_take, *};
+use crate::{marker::Marker, pack::SizeHint, utils::slice_take, *};
 
 impl MsgPck for bool {
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
@@ -9,8 +9,11 @@ impl MsgPck for bool {
         Ok(())
     }
 
-    fn size_hint(&self) -> (Option<usize>, Option<usize>) {
-        (Some(size_of::<Self>()), Some(size_of::<Self>()))
+    fn size_hint(&self) -> SizeHint {
+        SizeHint {
+            min: Some(size_of::<Self>()),
+            max: Some(size_of::<Self>()),
+        }
     }
 }
 
