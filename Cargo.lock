@@ -204,6 +204,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "msgpck_bloat_test"
+version = "0.1.0"
+dependencies = [
+ "heapless",
+ "msgpck",
+]
+
+[[package]]
 name = "msgpck_derive"
 version = "0.1.0"
 dependencies = [
