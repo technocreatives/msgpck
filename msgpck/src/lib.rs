@@ -25,8 +25,8 @@
 //! }
 //!
 //! let foo = Foo { a: true, b: "hello".to_owned() };
-//! let bytes = foo.pack_vec().unwrap();
-//! # let foo2 = Foo::unpack_bytes(&bytes).unwrap();
+//! let bytes = msgpck::pack_vec(&foo).unwrap();
+//! # let foo2: Foo = msgpck::unpack_bytes(&bytes).unwrap();
 //! # assert_eq!(foo, foo2);
 //! ```
 //!
@@ -113,8 +113,8 @@ mod writers;
 pub use crate::{
     impls::{EnumHeader, Variant},
     marker::Marker,
-    pack::{MsgPck, PackError, SizeHint},
-    unpack::{UnMsgPck, UnpackError},
+    pack::{pack_vec, MsgPck, PackError, SizeHint},
+    unpack::{unpack_bytes, UnMsgPck, UnpackError},
     utils::{pack_array_header, slice_take, unpack_array_header, unpack_enum_header},
     writers::MsgWriter,
 };
