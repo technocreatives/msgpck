@@ -51,6 +51,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     let mut generic_bounds = quote! {};
     let impl_generics = &input.generics.params;
     let mut struct_generics = quote!();
+    let mut size_hint = quote! { ::msgpck::SizeHint { min: Some(0), max: Some(0) } };
 
     for param in impl_generics {
         match param {
@@ -70,12 +71,18 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     }
 
     // serialize newtype structs without using array, this is to maintain compatibility with serde
-    encode_body.append_all(match &data.fields {
+    match &data.fields {
         Fields::Unnamed(..) if struct_len == 1 => {
-            quote! {}
+            encode_body.append_all(quote! {});
         }
-        _ => array_len_iter(data.fields.len()),
-    });
+        _ => {
+            encode_body.append_all(array_len_iter(data.fields.len()));
+            let header_len = struct_len.to_be_bytes().len() + 1;
+            size_hint.append_all(
+                quote! { + ::msgpck::SizeHint { min: Some(1), max: Some(#header_len) } },
+            );
+        }
+    }
 
     for (i, field) in data.fields.iter().enumerate() {
         let member = field.ident.clone().map(Member::Named).unwrap_or_else(|| {
@@ -87,6 +94,10 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
         encode_body.append_all(quote_spanned! { field.span() =>
             ::msgpck::MsgPck::pack(&self.#member, writer)?;
         });
+
+        size_hint.append_all(quote_spanned! { field.span() =>
+            + ::msgpck::MsgPck::size_hint(&self.#member)
+        });
     }
 
     quote! {
@@ -95,6 +106,10 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
             fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> ::std::result::Result<(), ::msgpck::PackError> {
                 #encode_body
                 Ok(())
+            }
+
+            fn size_hint(&self) -> ::msgpck::SizeHint {
+                #size_hint
             }
         }
     }

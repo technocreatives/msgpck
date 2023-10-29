@@ -71,6 +71,10 @@ impl MsgPck for String {
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
         self.as_str().pack(writer)
     }
+
+    fn size_hint(&self) -> SizeHint {
+        self.as_str().size_hint()
+    }
 }
 
 #[cfg(feature = "alloc")]

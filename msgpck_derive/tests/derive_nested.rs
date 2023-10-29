@@ -1,4 +1,5 @@
 use msgpck::{MsgPck, UnMsgPck};
+use pretty_hex::*;
 use proptest::prelude::*;
 use proptest_derive::Arbitrary;
 
@@ -29,5 +30,21 @@ proptest! {
         s.pack(&mut writer).unwrap();
         let d = Bar::unpack(&mut &writer[..]).unwrap();
         assert_eq!(s, d);
+    }
+
+    #[test]
+    fn roundtrip_size(s: Foo) {
+        let assumed_size = s.size_hint();
+        let mut writer: Vec<_> = Vec::new();
+        s.pack(&mut writer).unwrap();
+
+        // dbg!(writer.len(), &s, writer.hex_dump(), &assumed_size);
+        match assumed_size {
+            msgpck::SizeHint { min: Some(min), max: Some(max) } => {
+                assert!(min <= writer.len());
+                assert!(writer.len() <= max);
+            },
+            _ => panic!("SizeHint should be precise"),
+        };
     }
 }
