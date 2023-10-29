@@ -103,7 +103,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     quote! {
         impl<#impl_generics> msgpck::MsgPck for #struct_name<#struct_generics>
         where #generic_bounds {
-            fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> ::std::result::Result<(), ::msgpck::PackError> {
+            fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> ::core::result::Result<(), ::msgpck::PackError> {
                 #encode_body
                 Ok(())
             }
@@ -211,7 +211,7 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     quote! {
         impl<'_MsgPck, #impl_generics> ::msgpck::UnMsgPck<'_MsgPck> for #struct_name<#struct_generics>
         where #generic_bounds {
-            fn unpack(bytes: &mut &'_MsgPck [u8]) -> ::std::result::Result<Self, ::msgpck::UnpackError>
+            fn unpack(bytes: &mut &'_MsgPck [u8]) -> ::core::result::Result<Self, ::msgpck::UnpackError>
             where
                 Self: Sized,
             {

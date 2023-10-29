@@ -101,6 +101,8 @@
 //!
 // *TODO: decide if we're gonna change serialized representation of enums*
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 mod impls;
 mod marker;
 mod pack;
