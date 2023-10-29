@@ -181,6 +181,7 @@ dependencies = [
  "paste",
  "proptest",
  "proptest-derive",
+ "thiserror",
 ]
 
 [[package]]

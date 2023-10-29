@@ -18,14 +18,20 @@ pub trait UnMsgPck<'buf> {
 }
 
 #[cfg_attr(feature = "debug", derive(Debug))]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum UnpackError {
+    #[cfg_attr(feature = "std", error("Wrong marker, got {0:?}"))]
     WrongMarker(Marker),
+    #[cfg_attr(feature = "std", error("Unexpected end of data"))]
     UnexpectedEof,
-    IntTooBig(TryFromIntError),
+    #[cfg_attr(feature = "std", error("Integer too big"))]
+    IntTooBig { source: TryFromIntError },
 
     #[cfg(feature = "debug")]
-    Utf8Error(Utf8Error),
+    #[cfg_attr(feature = "std", error("Invalid UTF-8"))]
+    Utf8Error { source: Utf8Error },
     #[cfg(not(feature = "debug"))]
+    #[cfg_attr(feature = "std", error("Invalid UTF-8"))]
     Utf8Error,
 
     // TODO: Make this work with derive
@@ -35,6 +41,7 @@ pub enum UnpackError {
     //     expected: usize,
     // },
     // #[cfg(not(feature = "debug"))]
+    #[cfg_attr(feature = "std", error("Missing fields"))]
     MissingFields,
 
     // TODO: Make this work with derive
@@ -44,16 +51,20 @@ pub enum UnpackError {
     //     expected: usize,
     // },
     // #[cfg(not(feature = "debug"))]
+    #[cfg_attr(feature = "std", error("Too many fields"))]
     TooManyFields,
 
+    #[cfg_attr(feature = "std", error("Unexpected unit variant"))]
     UnexpectedUnitVariant,
+    #[cfg_attr(feature = "std", error("Expected unit variant"))]
     ExpectedUnitVariant,
+    #[cfg_attr(feature = "std", error("Unknown variant"))]
     UnknownVariant,
 }
 
 impl From<TryFromIntError> for UnpackError {
-    fn from(e: TryFromIntError) -> Self {
-        Self::IntTooBig(e)
+    fn from(source: TryFromIntError) -> Self {
+        Self::IntTooBig { source }
     }
 }
 
@@ -65,8 +76,8 @@ impl From<UnexpectedEofError> for UnpackError {
 
 impl From<Utf8Error> for UnpackError {
     #[cfg(feature = "debug")]
-    fn from(e: Utf8Error) -> Self {
-        Self::Utf8Error(e)
+    fn from(source: Utf8Error) -> Self {
+        Self::Utf8Error { source }
     }
 
     #[cfg(not(feature = "debug"))]

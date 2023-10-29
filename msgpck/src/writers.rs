@@ -6,6 +6,7 @@ pub trait MsgWriter {
 }
 
 #[cfg_attr(feature = "debug", derive(Debug))]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum WriteError {}
 
 #[cfg(feature = "alloc")]
