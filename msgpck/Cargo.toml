@@ -12,7 +12,8 @@ heapless07 = { package = "heapless", version = "0.7.16", optional = true }
 thiserror = { version = "1.0.50", optional = true }
 
 [features]
-default = ["std", "derive", "dep:heapless07"]
+default = ["std", "derive", "heapless07"]
+heapless07 = ["dep:heapless07"]
 alloc = []
 debug = []
 std = ["debug", "alloc", "num-traits/std", "dep:thiserror"]

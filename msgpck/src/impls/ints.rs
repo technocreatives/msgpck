@@ -1,5 +1,5 @@
 use crate::{MsgPck, MsgWriter, PackError, SizeHint, UnMsgPck, UnpackError};
-use std::mem::size_of;
+use core::mem::size_of;
 
 use self::helpers::read_int;
 

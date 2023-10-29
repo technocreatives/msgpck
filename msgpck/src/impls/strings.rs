@@ -1,4 +1,4 @@
-use std::str::from_utf8;
+use core::str::from_utf8;
 
 use crate::{
     marker::Marker, utils::slice_take, MsgPck, MsgWriter, PackError, SizeHint, UnMsgPck,

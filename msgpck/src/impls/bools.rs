@@ -1,4 +1,4 @@
-use std::mem::size_of;
+use core::mem::size_of;
 
 use crate::{marker::Marker, utils::slice_take, SizeHint, *};
 

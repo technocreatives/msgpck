@@ -20,7 +20,7 @@ pub fn pack_vec(data: impl MsgPck) -> Result<Vec<u8>, PackError> {
 ///
 /// If the slice was too small, this returns [BufferOverflow].
 /// Otherwise returns the number of bytes written.
-pub fn pack_slice(mut buf: &mut [u8], data: &impl MsgPck) -> Result<usize, PackError> {
+pub fn pack_slice(buf: &mut [u8], data: &impl MsgPck) -> Result<usize, PackError> {
     let mut writer = BufferWriter::new(buf);
     data.pack(&mut writer)?;
     Ok(writer.pos)

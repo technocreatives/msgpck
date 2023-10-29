@@ -1,4 +1,4 @@
-use std::{num::TryFromIntError, str::Utf8Error};
+use core::{num::TryFromIntError, str::Utf8Error};
 
 use crate::{marker::Marker, utils::UnexpectedEofError};
 
@@ -66,7 +66,7 @@ impl From<Utf8Error> for UnpackError {
     }
 
     #[cfg(not(feature = "debug"))]
-    fn from(e: Utf8Error) -> Self {
+    fn from(_: Utf8Error) -> Self {
         Self::Utf8Error
     }
 }
