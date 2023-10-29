@@ -6,6 +6,15 @@ pub trait UnMsgPck<'buf> {
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
     where
         Self: Sized;
+
+    #[cfg(feature = "alloc")]
+    fn unpack_bytes(source: &'buf [u8]) -> Result<Self, UnpackError>
+    where
+        Self: Sized,
+    {
+        let mut source = source;
+        Self::unpack(&mut source)
+    }
 }
 
 #[cfg_attr(feature = "debug", derive(Debug))]

@@ -12,6 +12,14 @@ pub trait MsgPck {
     fn size_hint(&self) -> SizeHint {
         SizeHint::default()
     }
+
+    #[cfg(feature = "alloc")]
+    fn pack_vec(&self) -> Result<Vec<u8>, PackError> {
+        let min_size = self.size_hint().min.unwrap_or(0);
+        let mut writer = Vec::with_capacity(min_size);
+        self.pack(&mut writer)?;
+        Ok(writer)
+    }
 }
 
 #[cfg_attr(feature = "debug", derive(Debug))]
