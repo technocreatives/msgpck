@@ -114,9 +114,9 @@ pub use crate::{
     marker::Marker,
     pack::{
         errors::PackError,
-        helpers::pack_vec,
+        helpers::{pack_slice, pack_vec},
         size_hint::SizeHint,
-        writers::{MsgWriter, WriteError},
+        writers::{BufferWriter, MsgWriter, WriteError},
         MsgPck,
     },
     unpack::{errors::UnpackError, helpers::unpack_bytes, UnMsgPck},
