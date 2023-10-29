@@ -1,8 +1,4 @@
-use crate::{
-    pack::{PackError, SizeHint},
-    writers::MsgWriter,
-    MsgPck, UnMsgPck, UnpackError,
-};
+use crate::{MsgPck, MsgWriter, PackError, SizeHint, UnMsgPck, UnpackError};
 use std::mem::size_of;
 
 use self::helpers::read_int;
@@ -117,7 +113,7 @@ impl_msgpck_for_uint!(u8, u16, u32, u64, usize);
 mod helpers {
     use num_traits::FromPrimitive;
 
-    use crate::{marker::Marker, utils::slice_take, writers::WriteError, MsgWriter};
+    use crate::{marker::Marker, utils::slice_take, MsgWriter, WriteError};
 
     // TODO: Use real small numbers
     #[inline(never)]

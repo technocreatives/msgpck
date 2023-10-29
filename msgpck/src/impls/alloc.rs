@@ -1,6 +1,6 @@
 // TODO: impl for Box<T>
 
-use crate::{pack::SizeHint, slice_take, Marker, MsgPck, UnMsgPck, UnpackError};
+use crate::{slice_take, Marker, MsgPck, SizeHint, UnMsgPck, UnpackError};
 
 impl<'buf> UnMsgPck<'buf> for String {
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError> {

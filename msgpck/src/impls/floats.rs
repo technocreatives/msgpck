@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use crate::{
-    marker::Marker, pack::SizeHint, utils::slice_take, MsgPck, PackError, UnMsgPck, UnpackError,
+    marker::Marker, utils::slice_take, MsgPck, PackError, SizeHint, UnMsgPck, UnpackError,
 };
 
 impl MsgPck for f32 {

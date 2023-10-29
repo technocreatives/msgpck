@@ -1,4 +1,4 @@
-use crate::{pack::SizeHint, Marker, MsgPck, MsgWriter, PackError};
+use crate::{Marker, MsgPck, MsgWriter, PackError, SizeHint};
 
 impl<'a, T: MsgPck> MsgPck for &'a [T] {
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {

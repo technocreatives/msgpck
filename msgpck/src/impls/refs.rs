@@ -1,4 +1,4 @@
-use crate::{pack::SizeHint, MsgPck};
+use crate::{MsgPck, SizeHint};
 
 impl<'r, T> MsgPck for &'r T
 where

@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use crate::{marker::Marker, pack::SizeHint, utils::slice_take, *};
+use crate::{marker::Marker, utils::slice_take, SizeHint, *};
 
 impl MsgPck for bool {
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {

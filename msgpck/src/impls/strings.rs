@@ -1,8 +1,8 @@
 use std::str::from_utf8;
 
 use crate::{
-    marker::Marker, pack::SizeHint, utils::slice_take, writers::MsgWriter, MsgPck, PackError,
-    UnMsgPck, UnpackError,
+    marker::Marker, utils::slice_take, MsgPck, MsgWriter, PackError, SizeHint, UnMsgPck,
+    UnpackError,
 };
 
 impl MsgPck for str {

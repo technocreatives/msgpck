@@ -108,15 +108,19 @@ mod marker;
 mod pack;
 mod unpack;
 mod utils;
-mod writers;
 
 pub use crate::{
     impls::{EnumHeader, Variant},
     marker::Marker,
-    pack::{pack_vec, MsgPck, PackError, SizeHint},
-    unpack::{unpack_bytes, UnMsgPck, UnpackError},
+    pack::{
+        errors::PackError,
+        helpers::pack_vec,
+        size_hint::SizeHint,
+        writers::{MsgWriter, WriteError},
+        MsgPck,
+    },
+    unpack::{errors::UnpackError, helpers::unpack_bytes, UnMsgPck},
     utils::{pack_array_header, slice_take, unpack_array_header, unpack_enum_header},
-    writers::MsgWriter,
 };
 
 #[cfg(feature = "derive")]

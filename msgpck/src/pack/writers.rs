@@ -7,7 +7,10 @@ pub trait MsgWriter {
 
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
-pub enum WriteError {}
+pub enum WriteError {
+    #[cfg_attr(feature = "std", error("Not enough space in buffer"))]
+    BufferOverflow,
+}
 
 #[cfg(feature = "alloc")]
 impl MsgWriter for Vec<u8> {
