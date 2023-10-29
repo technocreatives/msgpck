@@ -2,7 +2,16 @@ use std::ops::Add;
 
 use crate::writers::{MsgWriter, WriteError};
 
+/// Trait for serializing a type using [msgpack][https://msgpack.org/].
+///
+/// # Usage
+///
+/// The recommended usage is to use the derive macro `#[derive(MsgPck)]` on your
+/// type which will generate an implementation for you.
+///
+/// See the crate-level documentation for a custom implementation.
 pub trait MsgPck {
+    /// Pack yourself into a writer.
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError>;
 
     /// How big will the message be when packed?
@@ -13,6 +22,9 @@ pub trait MsgPck {
         SizeHint::default()
     }
 
+    /// Pack yourself into a `Vec<u8>`.
+    ///
+    /// This is a convenience method that calls `pack` on a `Vec<u8>` writer.
     #[cfg(feature = "alloc")]
     fn pack_vec(&self) -> Result<Vec<u8>, PackError> {
         let min_size = self.size_hint().min.unwrap_or(0);

@@ -1,4 +1,5 @@
-//! A light-weight library for serializing/deserializing types as MsgPack.
+//! A light-weight library for serializing/deserializing types as
+//! [MessagePack](https://msgpack.org/) ("msgpack").
 //!
 //! The goal of this library is to be as light-weight as possible, while still
 //! being easy to use. This is especially useful for embedded systems, where
@@ -29,10 +30,76 @@
 //! # assert_eq!(foo, foo2);
 //! ```
 //!
+//! ## Custom implementation
+//!
+//! Here is an example of a custom implementation for a unit struct:
+//!
+//! ```
+//! # use proptest::prelude::*;
+//! # use proptest_derive::Arbitrary;
+//! use msgpck::{MsgPck, UnMsgPck, MsgWriter, PackError, Marker, UnpackError, slice_take};
+//!
+//! # #[derive(Arbitrary, Debug, PartialEq)]
+//! struct User { id: u32, name: String }
+//!
+//! impl MsgPck for User {
+//!     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
+//!         // Structs are serialized as arrays of their fields
+//!         writer.write(&[Marker::FixArray(2).to_u8()])?;
+//!         // serialize the fields
+//!         self.id.pack(writer)?;
+//!         self.name.pack(writer)?;
+//!         Ok(())
+//!     }
+//! }
+//!
+//! // The lifetime `'buf` is the lifetime of the buffer we're reading from
+//! impl<'buf> UnMsgPck<'buf> for User {
+//!     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
+//!     where
+//!         Self: Sized,
+//!     {
+//!         // Use helper function to read the first byte
+//!         let &[b] = slice_take(source).map_err(|_| dbg!(UnpackError::UnexpectedEof))?;
+//!
+//!         // Check that it's the marker for a 2-element array
+//!         let m = Marker::from_u8(b);
+//!         if !matches!(m, Marker::FixArray(2)) {
+//!             return Err(UnpackError::WrongMarker(m));
+//!         };
+//!
+//!         // Unpack the fields
+//!         Ok(User {
+//!             id: u32::unpack(source)?,
+//!             name: String::unpack(source)?
+//!         })
+//!     }
+//! }
+//! #
+//! # proptest! {
+//! #     #[test]
+//! #     fn roundtrip(s: User) {
+//! #         let mut writer: Vec<_> = Vec::new();
+//! #         s.pack(&mut writer).unwrap();
+//! #         let d = User::unpack(&mut &writer[..]).unwrap();
+//! #         assert_eq!(s, d);
+//! #     }
+//! # }
+//! ```
+//!
 //! # Compatibility with `rmp_serde`
+//!
 //! We aim to be able to deserialize any value serialized using rmp_serde.
 //!
-//! *TODO: decide if we're gonna change serialized representation of enums*
+//! This means we use the following patterns for serializing:
+//!
+//! - `struct`s are serialized as arrays of their fields
+//! - An `enum` variants with no fields is serialized as a string
+//! - An `enum` variant with one field is a map `{ variant_name: field_value }`
+//! - An `enum` variant with multiple fields is a map `{ variant_name: [field_values…] }`
+// TODO: - `Option<T>` is serialized as an array of 0 or 1 elements
+//!
+// *TODO: decide if we're gonna change serialized representation of enums*
 
 mod impls;
 mod marker;
