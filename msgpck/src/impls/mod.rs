@@ -5,7 +5,7 @@ mod bools;
 mod bytes;
 mod enums;
 mod floats;
-// #[cfg(feature = "dep:heapless07")]
+#[cfg(feature = "heapless07")]
 mod heapless07;
 mod ints;
 mod refs;
