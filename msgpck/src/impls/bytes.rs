@@ -4,6 +4,7 @@ use crate::{
 };
 
 impl MsgPck for [u8] {
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
         match self.len() {
             ..=0xff => {
@@ -37,6 +38,7 @@ impl MsgPck for [u8] {
 }
 
 impl<'buf> UnMsgPck<'buf> for &'buf [u8] {
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
     where
         Self: Sized,

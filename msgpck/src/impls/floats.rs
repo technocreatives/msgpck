@@ -20,6 +20,7 @@ impl MsgPck for f32 {
 }
 
 impl<'buf> UnMsgPck<'buf> for f32 {
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
     where
         Self: Sized,
@@ -51,6 +52,7 @@ impl MsgPck for f64 {
 }
 
 impl<'buf> UnMsgPck<'buf> for f64 {
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
     where
         Self: Sized,

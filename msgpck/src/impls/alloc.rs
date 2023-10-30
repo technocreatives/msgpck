@@ -19,7 +19,7 @@ impl<T: MsgPck> MsgPck for Vec<T> {
 }
 
 impl<'buf, T: UnMsgPck<'buf>> UnMsgPck<'buf> for Vec<T> {
-    #[inline(never)]
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError> {
         let &[b] = slice_take(source)?;
         let len: usize = match Marker::from_u8(b) {

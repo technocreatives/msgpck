@@ -55,7 +55,4 @@ mod tests {
 
     roundtrip_proptest!(option_str: Option<String>);
     roundtrip_proptest!(option_vec_f32: Option<Vec<f32>>);
-
-    // FIXME: Returns None for Some(None)
-    // roundtrip_proptest!(option_option_str: Option<Option<f32>>);
 }

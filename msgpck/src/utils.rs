@@ -1,5 +1,6 @@
 use crate::{marker::Marker, EnumHeader, PackError, UnMsgPck, UnpackError, Variant};
 
+#[inline]
 pub fn slice_take<'a, T, const N: usize>(
     s: &mut &'a [T],
 ) -> Result<&'a [T; N], UnexpectedEofError> {
@@ -37,6 +38,7 @@ pub fn pack_array_header(writer: &mut dyn crate::MsgWriter, len: usize) -> Resul
 ///
 /// **NOTE**: This function does not necessarily unpack a complete msgpack value.
 /// In the case of an enum with fields, the next value unpacked must be the fields of the enum.
+#[cfg_attr(feature = "reduce-size", inline(never))]
 pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, UnpackError> {
     match Marker::from_u8(bytes[0]) {
         // if the enum is just a string or an int, it doesn't have any fields.

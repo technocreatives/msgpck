@@ -11,7 +11,7 @@ where
     K: MsgPck,
     V: MsgPck,
 {
-    #[inline(never)]
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
         pack_map_header(writer, self.len())?;
         for (k, v) in self.iter() {
@@ -27,7 +27,7 @@ where
     K: UnMsgPck<'buf> + Ord,
     V: UnMsgPck<'buf>,
 {
-    #[inline(never)]
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError> {
         let len = unpack_map_header(source)?;
 
@@ -51,7 +51,7 @@ where
     K: MsgPck,
     V: MsgPck,
 {
-    #[inline(never)]
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
         pack_map_header(writer, self.len())?;
         for (k, v) in self.iter() {
@@ -67,7 +67,7 @@ where
     K: UnMsgPck<'buf> + Hash + Eq,
     V: UnMsgPck<'buf>,
 {
-    #[inline(never)]
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError> {
         let len = unpack_map_header(source)?;
 

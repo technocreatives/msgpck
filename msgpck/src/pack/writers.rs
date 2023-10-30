@@ -34,6 +34,7 @@ impl<'buf> std::fmt::Debug for BufferWriter<'buf> {
 }
 
 impl<'buf> MsgWriter for BufferWriter<'buf> {
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn write(&mut self, data: &[u8]) -> Result<(), WriteError> {
         if self.pos + data.len() > self.buf.len() {
             return Err(WriteError::BufferOverflow);
@@ -45,6 +46,7 @@ impl<'buf> MsgWriter for BufferWriter<'buf> {
 
 #[cfg(feature = "alloc")]
 impl MsgWriter for Vec<u8> {
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn write(&mut self, data: &[u8]) -> Result<(), WriteError> {
         self.extend_from_slice(data);
         Ok(())

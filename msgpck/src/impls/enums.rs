@@ -42,6 +42,7 @@ impl<'v> MsgPck for EnumHeader<'v> {
 }
 
 impl<'buf: 'v, 'v> UnMsgPck<'buf> for EnumHeader<'v> {
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, crate::UnpackError>
     where
         Self: Sized,

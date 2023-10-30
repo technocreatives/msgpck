@@ -18,6 +18,8 @@ alloc = []
 debug = []
 std = ["debug", "alloc", "num-traits/std", "dep:thiserror"]
 derive = ["dep:msgpck_derive"]
+# Adds `inline(never)` annotations in some places
+reduce-size = []
 
 [dev-dependencies]
 paste = "1.0.14"

@@ -1,6 +1,7 @@
 use crate::{Marker, MsgPck, MsgWriter, PackError, SizeHint};
 
 impl<'a, T: MsgPck> MsgPck for &'a [T] {
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
         match self.len() {
             ..=0xf => {

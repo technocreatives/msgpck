@@ -8,6 +8,7 @@ pub struct SizeHint {
 }
 
 impl SizeHint {
+    #[inline]
     pub fn precise(size: usize) -> Self {
         Self {
             min: Some(size),
@@ -19,6 +20,7 @@ impl SizeHint {
 impl Add for SizeHint {
     type Output = Self;
 
+    #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         Self {
             min: match (self.min, rhs.min) {

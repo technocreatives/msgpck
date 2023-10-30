@@ -116,7 +116,7 @@ mod helpers {
     use crate::{marker::Marker, utils::slice_take, MsgWriter, WriteError};
 
     // TODO: Use real small numbers
-    #[inline(never)]
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     pub fn dummy_write_i64(writer: &mut dyn MsgWriter, val: i64) -> Result<(), WriteError> {
         writer.write(&[Marker::I64.to_u8()])?;
         writer.write(&val.to_be_bytes())?;
@@ -124,14 +124,14 @@ mod helpers {
     }
 
     // TODO: Use real small numbers
-    #[inline(never)]
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     pub fn dummy_write_u64(writer: &mut dyn MsgWriter, val: u64) -> Result<(), WriteError> {
         writer.write(&[Marker::U64.to_u8()])?;
         writer.write(&val.to_be_bytes())?;
         Ok(())
     }
 
-    #[inline(never)]
+    #[cfg_attr(feature = "reduce-size", inline(never))]
     pub fn read_int<T: FromPrimitive>(source: &mut &[u8]) -> Result<T, NumValueReadError> {
         use NumValueReadError::*;
 
