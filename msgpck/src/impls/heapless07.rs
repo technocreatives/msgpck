@@ -1,5 +1,9 @@
-use crate::{slice_take, Marker, MsgPck, MsgWriter, PackError, UnMsgPck, UnpackError};
-use heapless07::{String, Vec};
+use crate::{
+    slice_take,
+    utils::{pack_map_header, unpack_map_header},
+    Marker, MsgPck, MsgWriter, PackError, UnMsgPck, UnpackError,
+};
+use heapless07::{LinearMap, String, Vec};
 
 impl<const N: usize> MsgPck for String<N> {
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
@@ -36,5 +40,43 @@ impl<'buf, T: UnMsgPck<'buf>, const N: usize> UnMsgPck<'buf> for Vec<T, N> {
         *source = rest;
 
         (0..len).map(move |_| T::unpack(&mut data)).collect()
+    }
+}
+
+impl<K, V, const N: usize> MsgPck for LinearMap<K, V, N>
+where
+    K: MsgPck + Eq,
+    V: MsgPck,
+{
+    fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
+        pack_map_header(writer, self.len())?;
+        for (k, v) in self.iter() {
+            k.pack(writer)?;
+            v.pack(writer)?;
+        }
+        Ok(())
+    }
+}
+
+impl<'buf, K, V, const N: usize> UnMsgPck<'buf> for LinearMap<K, V, N>
+where
+    K: UnMsgPck<'buf> + Eq,
+    V: UnMsgPck<'buf>,
+{
+    fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError> {
+        let len = unpack_map_header(source)?;
+
+        // sanity check: make sure buffer has enough data for this map
+        if source.len() < len {
+            return Err(UnpackError::UnexpectedEof);
+        }
+
+        (0..len)
+            .map(move |_| {
+                let k = K::unpack(source)?;
+                let v = V::unpack(source)?;
+                Ok((k, v))
+            })
+            .collect()
     }
 }
