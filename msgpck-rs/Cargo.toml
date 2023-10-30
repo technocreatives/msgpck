@@ -9,5 +9,6 @@ thiserror = { version = "1.0.50", optional = true }
 heapless07 = { package = "heapless", version = "0.7.16", optional = true }
 
 [features]
+default = ["std"]
 alloc = []
 std = ["alloc", "thiserror"]
