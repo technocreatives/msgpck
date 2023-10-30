@@ -82,6 +82,16 @@ fn string(v: String) {
     test_pack_unpack(&v);
 }
 
+#[quickcheck]
+fn option(v: Option<i64>) {
+    test_pack_unpack(&v);
+}
+
+// #[quickcheck]
+// fn stacked_options(v: Option<Option<i64>>) {
+//     test_pack_unpack(&v);
+// }
+
 // TODO
 /*
 fn struct_with_lifetime() {

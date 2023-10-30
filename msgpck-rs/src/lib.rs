@@ -49,6 +49,7 @@ mod impl_bool;
 mod impl_bytes;
 mod impl_floats;
 mod impl_ints;
+mod impl_option;
 mod impl_ref;
 mod impl_strings;
 mod impl_uints;
