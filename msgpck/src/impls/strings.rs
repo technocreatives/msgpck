@@ -116,4 +116,6 @@ mod tests {
         data.pack(&mut writer).unwrap();
         assert_eq!(data, <&str>::unpack(&mut &writer[..]).unwrap());
     }
+
+    roundtrip_proptest!(random_strings: String);
 }

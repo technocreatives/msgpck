@@ -32,3 +32,10 @@ impl<'buf, T: UnMsgPck<'buf>> UnMsgPck<'buf> for Vec<T> {
         (0..len).map(move |_| T::unpack(source)).collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    roundtrip_proptest!(vec_str: Vec<String>);
+}

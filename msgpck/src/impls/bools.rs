@@ -52,4 +52,6 @@ mod tests {
         false.pack(&mut writer).unwrap();
         assert_eq!(false, bool::unpack(&mut writer.as_slice()).unwrap());
     }
+
+    roundtrip_proptest!(booleans: bool);
 }

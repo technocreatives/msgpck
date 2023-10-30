@@ -180,6 +180,7 @@ dependencies = [
  "msgpck_derive",
  "num-traits",
  "paste",
+ "pretty-hex",
  "proptest",
  "proptest-derive",
  "thiserror",

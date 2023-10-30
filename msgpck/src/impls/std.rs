@@ -86,3 +86,11 @@ where
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    roundtrip_proptest!(map: HashMap<String, f32>);
+    roundtrip_proptest!(tree: BTreeMap<String, f32>);
+}

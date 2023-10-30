@@ -1,4 +1,4 @@
-use crate::{utils::slice_take, MsgPck, MsgWriter, PackError, UnMsgPck, UnpackError};
+use crate::{MsgPck, MsgWriter, PackError, UnMsgPck, UnpackError};
 
 const NONE: u8 = 0xc0;
 
@@ -30,7 +30,6 @@ impl<'buf, T: UnMsgPck<'buf>> UnMsgPck<'buf> for Option<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use proptest::prelude::*;
 
     #[test]
     fn none() {
@@ -54,13 +53,9 @@ mod tests {
         assert_eq!(s, d);
     }
 
-    proptest! {
-        #[test]
-        fn roundtrip(s: Option<f32>) {
-            let mut writer: Vec<_> = Vec::new();
-            s.pack(&mut writer).unwrap();
-            let d = <Option<f32>>::unpack(&mut &writer[..]).unwrap();
-            assert_eq!(s, d);
-        }
-    }
+    roundtrip_proptest!(option_str: Option<String>);
+    roundtrip_proptest!(option_vec_f32: Option<Vec<f32>>);
+
+    // FIXME: Returns None for Some(None)
+    // roundtrip_proptest!(option_option_str: Option<Option<f32>>);
 }

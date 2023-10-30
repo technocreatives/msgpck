@@ -39,7 +39,7 @@ macro_rules! impl_msgpck_for_int {
 
                     proptest! {
                         #[test]
-                        fn test_foo(s: $t) {
+                        fn test(s: $t) {
                             let mut writer: Vec<_> = Vec::new();
                             s.pack(&mut writer).unwrap();
                             let d = <$t>::unpack(&mut &writer[..]).unwrap();
@@ -91,7 +91,7 @@ macro_rules! impl_msgpck_for_uint {
 
                     proptest! {
                         #[test]
-                        fn test_foo(s: $t) {
+                        fn test(s: $t) {
                             let mut writer: Vec<_> = Vec::new();
                             s.pack(&mut writer).unwrap();
                             let d = <$t>::unpack(&mut &writer[..]).unwrap();
