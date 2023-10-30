@@ -103,6 +103,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     quote! {
         impl<#impl_generics> msgpck::MsgPck for #struct_name<#struct_generics>
         where #generic_bounds {
+            #[cfg_attr(feature = "reduce-size", inline(never))]
             fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> ::core::result::Result<(), ::msgpck::PackError> {
                 #encode_body
                 Ok(())
@@ -211,6 +212,7 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     quote! {
         impl<'_MsgPck, #impl_generics> ::msgpck::UnMsgPck<'_MsgPck> for #struct_name<#struct_generics>
         where #generic_bounds {
+            #[cfg_attr(feature = "reduce-size", inline(never))]
             fn unpack(bytes: &mut &'_MsgPck [u8]) -> ::core::result::Result<Self, ::msgpck::UnpackError>
             where
                 Self: Sized,
@@ -338,6 +340,7 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
     quote! {
         impl<'buf> ::msgpck::UnMsgPck<'buf> for #enum_name {
+            #[cfg_attr(feature = "reduce-size", inline(never))]
             fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpck::UnpackError>
             where
                 Self: Sized + 'buf,
@@ -480,6 +483,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
     quote! {
         impl ::msgpck::MsgPck for #enum_name {
+            #[cfg_attr(feature = "reduce-size", inline(never))]
             fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> Result<(), ::msgpck::PackError> {
                 match self {
                     #pack_variants
