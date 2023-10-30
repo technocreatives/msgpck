@@ -9,6 +9,8 @@ mod floats;
 mod heapless07;
 mod ints;
 mod refs;
+#[cfg(feature = "std")]
+mod std;
 mod strings;
 
 pub use enums::{EnumHeader, Variant};
