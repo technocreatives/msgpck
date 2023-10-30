@@ -8,6 +8,7 @@ mod floats;
 #[cfg(feature = "heapless07")]
 mod heapless07;
 mod ints;
+mod option;
 mod refs;
 #[cfg(feature = "std")]
 mod std;
