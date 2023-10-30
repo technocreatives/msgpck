@@ -11,3 +11,4 @@ serde = { version = "1.0.189", features = ["derive"] }
 rmp-serde = "1.1.2"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
+pretty-hex = "0.3.0"
