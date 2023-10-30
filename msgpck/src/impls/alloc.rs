@@ -19,6 +19,7 @@ impl<T: MsgPck> MsgPck for Vec<T> {
 }
 
 impl<'buf, T: UnMsgPck<'buf>> UnMsgPck<'buf> for Vec<T> {
+    #[inline(never)]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError> {
         let &[b] = slice_take(source)?;
         let len: usize = match Marker::from_u8(b) {
@@ -28,12 +29,6 @@ impl<'buf, T: UnMsgPck<'buf>> UnMsgPck<'buf> for Vec<T> {
             m => return Err(UnpackError::WrongMarker(m)),
         };
 
-        if source.len() < len {
-            return Err(UnpackError::UnexpectedEof);
-        }
-        let (mut data, rest) = source.split_at(len);
-        *source = rest;
-
-        (0..len).map(move |_| T::unpack(&mut data)).collect()
+        (0..len).map(move |_| T::unpack(source)).collect()
     }
 }
