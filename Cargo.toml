@@ -7,6 +7,6 @@ members = [
     "msgpck_bloat_test",
 ]
 
-exclude = ["msgpck-rs-tests"]
+exclude = ["msgpck-rs-tests", "msgpck_bloat_test"]
 
 resolver = "2"

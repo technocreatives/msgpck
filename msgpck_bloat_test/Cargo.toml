@@ -3,15 +3,16 @@ name = "msgpck_bloat_test"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib"]
-
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 msgpck = { path = "../msgpck", default-features = false, features = [
     "derive",
     "heapless07",
 ] }
 heapless07 = { package = "heapless", version = "0.7.16" }
+libc = "0.2.149"
+compiler_builtins = "0.1.101"
+
+[profile.release]
+opt-level = "z"
+panic = "abort"
+lto = true
