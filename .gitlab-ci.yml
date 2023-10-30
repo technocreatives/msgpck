@@ -1,0 +1,6 @@
+image: registry.thetc.dev/elevate/core/docker/rust-builder:2023-06-28
+
+test:cargo:
+  script:
+    - rustc --version && cargo --version
+    - cargo test --workspace --verbose
