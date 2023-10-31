@@ -1,6 +1,6 @@
 #![feature(async_fn_in_trait)]
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 use msgpck::{AsyncMsgPck, MsgPck, UnMsgPck};
 use proptest::prelude::*;

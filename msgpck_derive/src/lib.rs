@@ -593,37 +593,11 @@ fn derive_pack_async_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         };
     }
 
-    let mut iter_enum_generics = quote! {};
     let mut pack_variants = quote! {};
 
     for variant in &data.variants {
         let variant_name = &variant.ident;
         let variant_name_str = variant_name.to_string();
-
-        // TODO: for if/when we wan't to support serializing by discriminant, instead of name
-        //if let Some((_, explicit_discriminant)) = &variant.discriminant {
-        //    // TODO: handle explicitly setting the discriminant.
-        //    // This loop should track the discriminant in the same fashion as rustc
-        //    match explicit_discriminant {
-        //        syn::Expr::Lit(_lit) => {
-        //            return quote_spanned! {
-        //                explicit_discriminant.span() =>
-        //                compile_error!("not supported (yet) by derive(UnMsgPck)");
-        //            };
-        //        }
-        //        _ => {
-        //            return quote_spanned! {
-        //                explicit_discriminant.span() =>
-        //                compile_error!("not supported by derive(UnMsgPck)");
-        //            };
-        //        }
-        //    }
-        //}
-
-        // generate stuff for the iterator enum
-        iter_enum_generics.append_all(quote_spanned! { variant.span() => #variant_name,});
-
-        // generate the actual iterator
 
         let unit: bool;
 
