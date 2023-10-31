@@ -127,8 +127,8 @@ pub use crate::{
     utils::{pack_array_header, slice_take, unpack_array_header, unpack_enum_header},
 };
 
-#[cfg(feature = "derive")]
-pub use msgpck_derive::{MsgPck, UnMsgPck};
+// #[cfg(feature = "derive")]
+// pub use msgpck_derive::{MsgPck, UnMsgPck};
 
 #[cfg(feature = "async")]
 pub use crate::pack::pack_async::AsyncMsgPck;

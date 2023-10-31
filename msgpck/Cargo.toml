@@ -11,14 +11,14 @@ license = "MIT"
 
 [dependencies]
 num-traits = { version = "0.2.17", default-features = false }
-msgpck_derive = { version = "0.1.0", path = "../msgpck_derive", optional = true }
+# msgpck_derive = { version = "0.1.0", path = "../msgpck_derive", optional = true }
 heapless07 = { package = "heapless", version = "0.7.16", optional = true }
 thiserror = { version = "1.0.50", optional = true }
 embedded-io-async = { version = "0.6.0", optional = true }
 defmt = { version = "0.3.5", optional = true }
 
 [features]
-default = ["std", "derive", "async"]
+default = ["std", "async"]
 # Enables support for types from the `heapless` crate, like Vec, String, LinearMap
 heapless07 = ["dep:heapless07"]
 # Enables support for types in the `alloc` crate, like String, HashMap, BTreeMap
@@ -36,7 +36,7 @@ std = [
     "embedded-io-async?/std",
 ]
 # Enables derive macros
-derive = ["dep:msgpck_derive"]
+# derive = ["dep:msgpck_derive"]
 # Adds `inline(never)` annotations in some places
 reduce-size = []
 # Adds async packing for writers that support it
