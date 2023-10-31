@@ -10,6 +10,7 @@ const FIXMAP_SIZE: u8 = 0x0f;
 /// Format markers.
 #[derive(Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "debug", derive(Debug))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Marker {
     FixPos(u8) = 0x0,

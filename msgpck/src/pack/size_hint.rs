@@ -1,6 +1,7 @@
 use core::ops::Add;
 
 #[cfg_attr(feature = "debug", derive(Debug))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Default)]
 pub struct SizeHint {
     pub min: Option<usize>,

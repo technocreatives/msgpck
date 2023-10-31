@@ -187,6 +187,7 @@ mod helpers {
     }
 
     #[cfg_attr(feature = "debug", derive(Debug))]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     pub enum NumValueReadError {
         InvalidMarker,
         InvalidData,

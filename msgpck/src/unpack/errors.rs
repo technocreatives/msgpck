@@ -3,6 +3,7 @@ use core::{num::TryFromIntError, str::Utf8Error};
 use crate::{marker::Marker, utils::UnexpectedEofError};
 
 #[cfg_attr(feature = "debug", derive(Debug))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum UnpackError {
     #[cfg_attr(feature = "std", error("Wrong marker, got {0:?}"))]
@@ -14,7 +15,10 @@ pub enum UnpackError {
 
     #[cfg(feature = "debug")]
     #[cfg_attr(feature = "std", error("Invalid UTF-8"))]
-    Utf8Error { source: Utf8Error },
+    Utf8Error {
+        #[cfg_attr(feature = "defmt", defmt(Display2Format))]
+        source: Utf8Error,
+    },
     #[cfg(not(feature = "debug"))]
     #[cfg_attr(feature = "std", error("Invalid UTF-8"))]
     Utf8Error,
