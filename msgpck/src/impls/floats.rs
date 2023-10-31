@@ -19,6 +19,18 @@ impl MsgPck for f32 {
     }
 }
 
+#[cfg(feature = "async")]
+impl crate::AsyncMsgPck for f32 {
+    async fn pack_async(
+        &self,
+        mut writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        writer.write_all(&[Marker::F32.to_u8()]).await?;
+        writer.write_all(&self.to_be_bytes()).await?;
+        Ok(())
+    }
+}
+
 impl<'buf> UnMsgPck<'buf> for f32 {
     #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
@@ -48,6 +60,18 @@ impl MsgPck for f64 {
             min: Some(size_of::<Self>() + 1),
             max: Some(size_of::<Self>() + 1),
         }
+    }
+}
+
+#[cfg(feature = "async")]
+impl crate::AsyncMsgPck for f64 {
+    async fn pack_async(
+        &self,
+        mut writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        writer.write_all(&[Marker::F64.to_u8()]).await?;
+        writer.write_all(&self.to_be_bytes()).await?;
+        Ok(())
     }
 }
 

@@ -3,7 +3,26 @@ use crate::{
     UnpackError,
 };
 
-impl MsgPck for [u8] {
+/// Helper type to pack a byte slice as a MessagePack binary instead of a MessagePack array.
+#[derive(PartialEq, Clone, Copy)]
+#[cfg_attr(feature = "debug", derive(Debug))]
+pub struct ByteSlice<'buf>(&'buf [u8]);
+
+impl<'buf> ByteSlice<'buf> {
+    pub fn new(buf: &'buf [u8]) -> Self {
+        Self(buf)
+    }
+}
+
+impl core::ops::Deref for ByteSlice<'_> {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
+}
+
+impl<'buf> MsgPck for ByteSlice<'buf> {
     #[cfg_attr(feature = "reduce-size", inline(never))]
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
         match self.len() {
@@ -37,7 +56,7 @@ impl MsgPck for [u8] {
     }
 }
 
-impl<'buf> UnMsgPck<'buf> for &'buf [u8] {
+impl<'buf> UnMsgPck<'buf> for ByteSlice<'buf> {
     #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
     where
@@ -57,7 +76,7 @@ impl<'buf> UnMsgPck<'buf> for &'buf [u8] {
         let (data, rest) = source.split_at(len);
         *source = rest;
 
-        Ok(data)
+        Ok(ByteSlice(data))
     }
 }
 
@@ -67,28 +86,28 @@ mod tests {
 
     #[test]
     fn smol_array() {
-        let data = &[1, 2, 3];
+        let data = ByteSlice(&[1, 2, 3]);
 
         let mut writer: Vec<_> = Vec::new();
         data.pack(&mut writer).unwrap();
-        assert_eq!(data, <&[u8]>::unpack(&mut &writer[..]).unwrap());
+        assert_eq!(data, <ByteSlice>::unpack(&mut &writer[..]).unwrap());
     }
 
     #[test]
     fn medium_array() {
-        let data = &[42; 0x101];
+        let data = ByteSlice(&[42; 0x101]);
 
         let mut writer: Vec<_> = Vec::new();
         data.pack(&mut writer).unwrap();
-        assert_eq!(data, <&[u8]>::unpack(&mut &writer[..]).unwrap());
+        assert_eq!(data, <ByteSlice>::unpack(&mut &writer[..]).unwrap());
     }
 
     #[test]
     fn large_array() {
-        let data = &[42; 0x10101];
+        let data = ByteSlice(&[42; 0x10101]);
 
         let mut writer: Vec<_> = Vec::new();
         data.pack(&mut writer).unwrap();
-        assert_eq!(data, <&[u8]>::unpack(&mut &writer[..]).unwrap());
+        assert_eq!(data, <ByteSlice>::unpack(&mut &writer[..]).unwrap());
     }
 }

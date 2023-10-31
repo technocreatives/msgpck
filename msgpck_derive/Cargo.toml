@@ -17,8 +17,11 @@ syn = { version = "2.0.38", features = [
 ] }
 
 [dev-dependencies]
-msgpck = { path = "../msgpck" }
+embedded-io-async = "0.6.0"
+msgpck = { path = "../msgpck", features = ["async"] }
 pretty-hex = "0.3.0"
 proptest = "1.3.1"
 proptest-derive = "0.4.0"
+smol = "1.3.0"
+smol-potat = "1.1.2"
 trybuild = "1.0.85"

@@ -118,6 +118,32 @@ pub fn pack_map_header(writer: &mut dyn crate::MsgWriter, len: usize) -> Result<
     Ok(())
 }
 
+/// Helper function that packs a msgpack map header.
+///
+/// **NOTE**: Keys and values of the map are not included, and must therefore be packed next.
+#[cfg(feature = "async")]
+pub async fn pack_map_header_async(
+    mut writer: impl embedded_io_async::Write,
+    len: usize,
+) -> Result<(), PackError> {
+    match len {
+        ..=0xf => {
+            writer
+                .write_all(&[Marker::FixMap(len as u8).to_u8()])
+                .await?
+        }
+        0x10..=0xffff => {
+            writer.write_all(&[Marker::Map16.to_u8()]).await?;
+            writer.write_all(&((len as u16).to_be_bytes())).await?;
+        }
+        _ => {
+            writer.write_all(&[Marker::Map32.to_u8()]).await?;
+            writer.write_all(&((len as u32).to_be_bytes())).await?;
+        }
+    }
+    Ok(())
+}
+
 /// Helper function that tries to decode a msgpack map header from a byte slice.
 ///
 /// ## Returns

@@ -1,5 +1,6 @@
 pub(crate) mod errors;
 pub(crate) mod helpers;
+pub(crate) mod pack_async;
 pub(crate) mod size_hint;
 pub(crate) mod writers;
 

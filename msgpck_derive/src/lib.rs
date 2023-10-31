@@ -22,6 +22,19 @@ pub fn derive_pack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     .into()
 }
 
+#[proc_macro_derive(AsyncMsgPck)]
+pub fn derive_pack_async(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    match &input.data {
+        syn::Data::Struct(s) => derive_pack_async_struct(&input, s),
+        syn::Data::Enum(s) => derive_pack_async_enum(&input, s),
+        syn::Data::Union(_) => quote! {
+            compile_error!("derive(MsgPck) is not supported for unions");
+        },
+    }
+    .into()
+}
+
 #[proc_macro_derive(UnMsgPck)]
 pub fn derive_unpack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -101,7 +114,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     }
 
     quote! {
-        impl<#impl_generics> msgpck::MsgPck for #struct_name<#struct_generics>
+        impl<#impl_generics> ::msgpck::MsgPck for #struct_name<#struct_generics>
         where #generic_bounds {
             #[cfg_attr(feature = "reduce-size", inline(never))]
             fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> ::core::result::Result<(), ::msgpck::PackError> {
@@ -111,6 +124,74 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
 
             fn size_hint(&self) -> ::msgpck::SizeHint {
                 #size_hint
+            }
+        }
+    }
+}
+
+/// Generate impl AsyncMsgPck for a struct
+fn derive_pack_async_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
+    let struct_name = &input.ident;
+    let struct_len = data.fields.len();
+
+    if let Some(where_clause) = &input.generics.where_clause {
+        return quote_spanned! {
+            where_clause.span() =>
+            compile_error!("derive(AsyncMsgPck) doesn't support where-clauses for structs");
+        };
+    }
+
+    let mut encode_body = quote! {};
+    let mut generic_bounds = quote! {};
+    let impl_generics = &input.generics.params;
+    let mut struct_generics = quote!();
+
+    for param in impl_generics {
+        match param {
+            GenericParam::Lifetime(l) => {
+                let l = &l.lifetime;
+                struct_generics.append_all(quote! { #l, });
+            }
+            GenericParam::Type(t) => {
+                let t = &t.ident;
+                struct_generics.append_all(quote! { #t, });
+                generic_bounds.append_all(quote! {
+                    #t: ::msgpck::MsgPck,
+                });
+            }
+            GenericParam::Const(..) => continue,
+        }
+    }
+
+    // serialize newtype structs without using array, this is to maintain compatibility with serde
+    match &data.fields {
+        Fields::Unnamed(..) if struct_len == 1 => {
+            encode_body.append_all(quote! {});
+        }
+        _ => {
+            encode_body.append_all(array_len_iter_async(data.fields.len()));
+        }
+    }
+
+    for (i, field) in data.fields.iter().enumerate() {
+        let member = field.ident.clone().map(Member::Named).unwrap_or_else(|| {
+            Member::Unnamed(Index {
+                index: i as u32,
+                span: field.span(),
+            })
+        });
+        encode_body.append_all(quote_spanned! { field.span() =>
+            ::msgpck::AsyncMsgPck::pack_async(&self.#member, &mut writer).await?;
+        });
+    }
+
+    quote! {
+        impl<#impl_generics> ::msgpck::AsyncMsgPck for #struct_name<#struct_generics>
+        where #generic_bounds {
+            #[cfg_attr(feature = "reduce-size", inline(never))]
+            async fn pack_async(&self, mut writer: impl ::embedded_io_async::Write) -> ::core::result::Result<(), ::msgpck::PackError> {
+                #encode_body
+                Ok(())
             }
         }
     }
@@ -494,6 +575,142 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     }
 }
 
+/// Generate impl AsyncMsgPck for an enum
+fn derive_pack_async_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
+    let enum_name = &input.ident;
+
+    if let Some(where_clause) = &input.generics.where_clause {
+        return quote_spanned! {
+            where_clause.span() =>
+            compile_error!("derive(MsgPck) doesn't support where-clauses for enums");
+        };
+    }
+
+    if !input.generics.params.is_empty() {
+        return quote_spanned! {
+            input.generics.params.span() =>
+            compile_error!("derive(MsgPck) doesn't support generics for enums");
+        };
+    }
+
+    let mut iter_enum_generics = quote! {};
+    let mut pack_variants = quote! {};
+
+    for variant in &data.variants {
+        let variant_name = &variant.ident;
+        let variant_name_str = variant_name.to_string();
+
+        // TODO: for if/when we wan't to support serializing by discriminant, instead of name
+        //if let Some((_, explicit_discriminant)) = &variant.discriminant {
+        //    // TODO: handle explicitly setting the discriminant.
+        //    // This loop should track the discriminant in the same fashion as rustc
+        //    match explicit_discriminant {
+        //        syn::Expr::Lit(_lit) => {
+        //            return quote_spanned! {
+        //                explicit_discriminant.span() =>
+        //                compile_error!("not supported (yet) by derive(UnMsgPck)");
+        //            };
+        //        }
+        //        _ => {
+        //            return quote_spanned! {
+        //                explicit_discriminant.span() =>
+        //                compile_error!("not supported by derive(UnMsgPck)");
+        //            };
+        //        }
+        //    }
+        //}
+
+        // generate stuff for the iterator enum
+        iter_enum_generics.append_all(quote_spanned! { variant.span() => #variant_name,});
+
+        // generate the actual iterator
+
+        let unit: bool;
+
+        // anything that should be packed after the header goes in here
+        let mut pack_fields = quote! {};
+
+        // the pattern match for the enum variant fields
+        let mut match_fields = quote! {};
+
+        match &variant.fields {
+            syn::Fields::Named(fields) => {
+                // if there is more than one field, pack them as an array
+                let fields_len = fields.named.len();
+                if fields_len > 1 {
+                    pack_fields.append_all(quote! {
+                        ::msgpck::pack_array_header(writer, #fields_len)?;
+                    });
+                }
+
+                unit = fields_len == 0;
+
+                for field in &fields.named {
+                    let field_name = &field.ident;
+                    // pattern match all the fields
+                    match_fields.append_all(quote_spanned! { field.span() => #field_name, });
+
+                    // pack all the named fields
+                    pack_fields.append_all(quote_spanned! { field.span() =>
+                        ::msgpck::MsgPck::pack(&#field_name, writer)?;
+                    })
+                }
+
+                // wrap fields pattern in brackets
+                match_fields = quote! { { #match_fields } };
+            }
+            syn::Fields::Unnamed(fields) => {
+                // if there is more than one field, pack them as an array
+                let fields_len = fields.unnamed.len();
+                if fields_len > 1 {
+                    pack_fields.append_all(quote! {
+                        ::msgpck::pack_array_header(writer, #fields_len)?;
+                    });
+                }
+
+                unit = fields_len == 0;
+
+                for (i, field) in fields.unnamed.iter().enumerate() {
+                    let field_name = Ident::new(&format!("_{i}"), field.span());
+                    // pattern match all the fields
+                    match_fields.append_all(quote! { #field_name, });
+
+                    // pack all the fields
+                    pack_fields.append_all(quote! {
+                        ::msgpck::MsgPck::pack(&#field_name, writer)?;
+                    });
+                }
+
+                // wrap fields pattern in parentheses
+                match_fields = quote! { (#match_fields) };
+            }
+            syn::Fields::Unit => unit = true,
+        }
+
+        pack_variants.append_all(quote! {
+            Self::#variant_name #match_fields => {
+                ::msgpck::MsgPck::pack(&::msgpck::EnumHeader {
+                    variant: #variant_name_str.into(),
+                    unit: #unit,
+                }, writer)?;
+                #pack_fields
+            }
+        });
+    }
+
+    quote! {
+        impl ::msgpck::MsgPck for #enum_name {
+            #[cfg_attr(feature = "reduce-size", inline(never))]
+            fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> Result<(), ::msgpck::PackError> {
+                match self {
+                    #pack_variants
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
 fn array_len_iter(len: usize) -> TokenStream {
     match len {
         ..=0xf => {
@@ -512,6 +729,29 @@ fn array_len_iter(len: usize) -> TokenStream {
             quote! {
                 writer.write(&[::msgpck::Marker::Array32.to_u8()])?;
                 writer.write(&((#len as u32).to_be_bytes()))?;
+            }
+        }
+    }
+}
+
+fn array_len_iter_async(len: usize) -> TokenStream {
+    match len {
+        ..=0xf => {
+            let len = len as u8;
+            quote! { writer.write_all(&[::msgpck::Marker::FixArray(#len).to_u8()]).await?; }
+        }
+        ..=0xffff => {
+            let len = len as u16;
+            quote! {
+                writer.write_all(&[::msgpck::Marker::Array16.to_u8()]).await?;
+                writer.write_all(&((#len as u16).to_be_bytes())).await?;
+            }
+        }
+        _ => {
+            let len = len as u32;
+            quote! {
+                writer.write_all(&[::msgpck::Marker::Array32.to_u8()]).await?;
+                writer.write_all(&((#len as u32).to_be_bytes())).await?;
             }
         }
     }

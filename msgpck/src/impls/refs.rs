@@ -13,6 +13,17 @@ where
     }
 }
 
+#[cfg(feature = "async")]
+impl<'r, T: crate::AsyncMsgPck> crate::AsyncMsgPck for &'r T {
+    async fn pack_async(
+        &self,
+        writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        (**self).pack_async(writer).await?;
+        Ok(())
+    }
+}
+
 impl<'a, T> MsgPck for &'a mut T
 where
     T: MsgPck,

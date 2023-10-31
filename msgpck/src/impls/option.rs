@@ -11,6 +11,20 @@ impl<T: MsgPck> MsgPck for Option<T> {
     }
 }
 
+#[cfg(feature = "async")]
+impl<T: crate::AsyncMsgPck> crate::AsyncMsgPck for Option<T> {
+    async fn pack_async(
+        &self,
+        mut writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        match self {
+            Some(data) => data.pack_async(writer).await?,
+            None => writer.write_all(&[NONE]).await?,
+        };
+        Ok(())
+    }
+}
+
 impl<'buf, T: UnMsgPck<'buf>> UnMsgPck<'buf> for Option<T> {
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
     where

@@ -17,6 +17,18 @@ impl MsgPck for bool {
     }
 }
 
+#[cfg(feature = "async")]
+impl crate::AsyncMsgPck for bool {
+    async fn pack_async(
+        &self,
+        mut writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        let data = if *self { Marker::True } else { Marker::False };
+        writer.write_all(&[data.to_u8()]).await?;
+        Ok(())
+    }
+}
+
 impl<'buf> UnMsgPck<'buf> for bool {
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
     where

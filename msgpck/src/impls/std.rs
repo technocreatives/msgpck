@@ -22,6 +22,21 @@ where
     }
 }
 
+#[cfg(feature = "async")]
+impl<K: crate::AsyncMsgPck, V: crate::AsyncMsgPck> crate::AsyncMsgPck for BTreeMap<K, V> {
+    async fn pack_async(
+        &self,
+        mut writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        crate::utils::pack_map_header_async(&mut writer, self.len()).await?;
+        for (k, v) in self.iter() {
+            k.pack_async(&mut writer).await?;
+            v.pack_async(&mut writer).await?;
+        }
+        Ok(())
+    }
+}
+
 impl<'buf, K, V> UnMsgPck<'buf> for BTreeMap<K, V>
 where
     K: UnMsgPck<'buf> + Ord,
@@ -57,6 +72,21 @@ where
         for (k, v) in self.iter() {
             k.pack(writer)?;
             v.pack(writer)?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(feature = "async")]
+impl<K: crate::AsyncMsgPck, V: crate::AsyncMsgPck> crate::AsyncMsgPck for HashMap<K, V> {
+    async fn pack_async(
+        &self,
+        mut writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        crate::utils::pack_map_header_async(&mut writer, self.len()).await?;
+        for (k, v) in self.iter() {
+            k.pack_async(&mut writer).await?;
+            v.pack_async(&mut writer).await?;
         }
         Ok(())
     }

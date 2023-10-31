@@ -102,15 +102,19 @@
 // *TODO: decide if we're gonna change serialized representation of enums*
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(
+    feature = "async",
+    feature(async_fn_in_trait, return_position_impl_trait_in_trait)
+)]
 
 mod impls;
 mod marker;
 mod pack;
 mod unpack;
-mod utils;
+pub mod utils;
 
 pub use crate::{
-    impls::{EnumHeader, Variant},
+    impls::{ByteSlice, EnumHeader, Variant},
     marker::Marker,
     pack::{
         errors::PackError,
@@ -125,3 +129,9 @@ pub use crate::{
 
 #[cfg(feature = "derive")]
 pub use msgpck_derive::{MsgPck, UnMsgPck};
+
+#[cfg(feature = "async")]
+pub use crate::pack::pack_async::AsyncMsgPck;
+
+#[cfg(all(feature = "derive", feature = "async"))]
+pub use msgpck_derive::AsyncMsgPck;

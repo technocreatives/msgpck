@@ -21,7 +21,7 @@ struct Bar {
 struct Baz {
     a: f32,
     foo: Foo,
-    hashmap: HashMap<String, Vec<Foo>>,
+    collection: HashMap<u32, Foo>,
     btreemap: BTreeMap<u16, Foo>,
     list: Vec<Foo>,
 }

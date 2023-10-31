@@ -19,6 +19,19 @@ macro_rules! impl_msgpck_for_int {
                 }
             }
 
+            #[cfg(feature = "async")]
+            impl crate::AsyncMsgPck for $t {
+                async fn pack_async(
+                    &self,
+                    mut writer: impl embedded_io_async::Write,
+                ) -> Result<(), crate::PackError> {
+                    // TODO: Use real small numbers
+                    writer.write_all(&[crate::Marker::I64.to_u8()]).await?;
+                    writer.write_all(&(*self as i64).to_be_bytes()).await?;
+                    Ok(())
+                }
+            }
+
             impl<'buf> UnMsgPck<'buf> for $t {
                 fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError>
                 where
@@ -68,6 +81,19 @@ macro_rules! impl_msgpck_for_uint {
                         min: Some(size_of::<Self>()),
                         max: Some(size_of::<Self>() + 1),
                     }
+                }
+            }
+
+            #[cfg(feature = "async")]
+            impl crate::AsyncMsgPck for $t {
+                async fn pack_async(
+                    &self,
+                    mut writer: impl embedded_io_async::Write,
+                ) -> Result<(), crate::PackError> {
+                    // TODO: Use real small numbers
+                    writer.write_all(&[crate::Marker::U64.to_u8()]).await?;
+                    writer.write_all(&(*self as u64).to_be_bytes()).await?;
+                    Ok(())
                 }
             }
 

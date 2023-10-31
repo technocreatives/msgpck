@@ -29,4 +29,5 @@ mod refs;
 mod std;
 mod strings;
 
+pub use bytes::ByteSlice;
 pub use enums::{EnumHeader, Variant};
