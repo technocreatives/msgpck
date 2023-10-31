@@ -2,6 +2,12 @@
 name = "msgpck_derive"
 version = "0.1.0"
 edition = "2021"
+authors = [
+    "Joakim Hulthe <joakim@technocreatives.com>",
+    "Pascal Hertleif <pascal@technocreatives.com>",
+]
+description = "Derive macros for msgpck"
+license = "MIT"
 
 [lib]
 proc-macro = true

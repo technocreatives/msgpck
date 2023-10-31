@@ -1,7 +1,13 @@
 [package]
 name = "msgpck"
-version = "0.1.0"
+version = "0.1.0-rc.1"
 edition = "2021"
+authors = [
+    "Joakim Hulthe <joakim@technocreatives.com>",
+    "Pascal Hertleif <pascal@technocreatives.com>",
+]
+description = "Derive macros for msgpck"
+license = "MIT"
 
 [dependencies]
 num-traits = { version = "0.2.17", default-features = false }
