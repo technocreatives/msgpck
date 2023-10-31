@@ -45,25 +45,3 @@ proptest! {
         assert_eq!(s, d);
     }
 }
-#[test]
-fn roundtrip_bar_async_fail() {
-    let s = Bar {
-        a: 0.0,
-        foo: Foo {
-            a: false,
-            b: "".to_string(),
-        },
-        collection: HashMap::from([(
-            0,
-            Foo {
-                a: false,
-                b: "".to_string(),
-            },
-        )]),
-    };
-    let mut writer: Vec<_> = Vec::new();
-
-    smol::block_on(async { s.pack_async(&mut writer).await }).unwrap();
-    let d = Bar::unpack(&mut &writer[..]).unwrap();
-    assert_eq!(s, d);
-}
