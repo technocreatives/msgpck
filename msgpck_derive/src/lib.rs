@@ -639,7 +639,7 @@ fn derive_pack_async_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 let fields_len = fields.named.len();
                 if fields_len > 1 {
                     pack_fields.append_all(quote! {
-                        ::msgpck::pack_array_header(writer, #fields_len)?;
+                        ::msgpck::utils::pack_array_header_async(&mut writer, #fields_len).await?;
                     });
                 }
 
@@ -652,7 +652,7 @@ fn derive_pack_async_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
                     // pack all the named fields
                     pack_fields.append_all(quote_spanned! { field.span() =>
-                        ::msgpck::MsgPck::pack(&#field_name, writer)?;
+                        ::msgpck::AsyncMsgPck::pack_async(&#field_name, &mut writer).await?;
                     })
                 }
 
@@ -664,7 +664,7 @@ fn derive_pack_async_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 let fields_len = fields.unnamed.len();
                 if fields_len > 1 {
                     pack_fields.append_all(quote! {
-                        ::msgpck::pack_array_header(writer, #fields_len)?;
+                        ::msgpck::utils::pack_array_header_async(&mut writer, #fields_len).await?;
                     });
                 }
 
@@ -677,7 +677,7 @@ fn derive_pack_async_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
                     // pack all the fields
                     pack_fields.append_all(quote! {
-                        ::msgpck::MsgPck::pack(&#field_name, writer)?;
+                        ::msgpck::AsyncMsgPck::pack_async(&#field_name, &mut writer).await?;
                     });
                 }
 
@@ -689,19 +689,19 @@ fn derive_pack_async_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
         pack_variants.append_all(quote! {
             Self::#variant_name #match_fields => {
-                ::msgpck::MsgPck::pack(&::msgpck::EnumHeader {
+                ::msgpck::AsyncMsgPck::pack_async(&::msgpck::EnumHeader {
                     variant: #variant_name_str.into(),
                     unit: #unit,
-                }, writer)?;
+                }, &mut writer).await?;
                 #pack_fields
             }
         });
     }
 
     quote! {
-        impl ::msgpck::MsgPck for #enum_name {
+        impl ::msgpck::AsyncMsgPck for #enum_name {
             #[cfg_attr(feature = "reduce-size", inline(never))]
-            fn pack(&self, writer: &mut dyn ::msgpck::MsgWriter) -> Result<(), ::msgpck::PackError> {
+            async fn pack_async(&self, mut writer: impl ::embedded_io_async::Write) -> ::core::result::Result<(), ::msgpck::PackError> {
                 match self {
                     #pack_variants
                 }

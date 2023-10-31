@@ -41,6 +41,21 @@ impl<'v> MsgPck for EnumHeader<'v> {
     }
 }
 
+#[cfg(feature = "async")]
+impl<'v> crate::AsyncMsgPck for EnumHeader<'v> {
+    async fn pack_async(&self, mut writer: impl embedded_io_async::Write) -> Result<(), PackError> {
+        if !self.unit {
+            writer.write_all(&[Marker::FixMap(1).to_u8()]).await?;
+        }
+        match self.variant {
+            Variant::Discriminant(n) => n.pack_async(&mut writer).await?,
+            Variant::Name(s) => crate::AsyncMsgPck::pack_async(s, &mut writer).await?,
+        }
+
+        Ok(())
+    }
+}
+
 impl<'buf: 'v, 'v> UnMsgPck<'buf> for EnumHeader<'v> {
     #[cfg_attr(feature = "reduce-size", inline(never))]
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, crate::UnpackError>

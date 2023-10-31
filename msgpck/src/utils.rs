@@ -19,6 +19,7 @@ pub struct UnexpectedEofError;
 /// Helper function that packs a msgpack array header.
 ///
 /// **NOTE**: Values of the array are not included, and must therefore be packed next.
+#[cfg_attr(feature = "reduce-size", inline(never))]
 pub fn pack_array_header(writer: &mut dyn crate::MsgWriter, len: usize) -> Result<(), PackError> {
     match len {
         ..=0xf => writer.write(&[Marker::FixArray(len as u8).to_u8()])?,
@@ -29,6 +30,33 @@ pub fn pack_array_header(writer: &mut dyn crate::MsgWriter, len: usize) -> Resul
         _ => {
             writer.write(&[Marker::Array32.to_u8()])?;
             writer.write(&((len as u32).to_be_bytes()))?;
+        }
+    };
+    Ok(())
+}
+
+/// Helper function that packs a msgpack array header.
+///
+/// **NOTE**: Values of the array are not included, and must therefore be packed next.
+#[cfg(feature = "async")]
+#[cfg_attr(feature = "reduce-size", inline(never))]
+pub async fn pack_array_header_async(
+    mut writer: impl embedded_io_async::Write,
+    len: usize,
+) -> Result<(), PackError> {
+    match len {
+        ..=0xf => {
+            writer
+                .write_all(&[Marker::FixArray(len as u8).to_u8()])
+                .await?
+        }
+        0x10..=0xffff => {
+            writer.write_all(&[Marker::Array16.to_u8()]).await?;
+            writer.write_all(&((len as u16).to_be_bytes())).await?;
+        }
+        _ => {
+            writer.write_all(&[Marker::Array32.to_u8()]).await?;
+            writer.write_all(&((len as u32).to_be_bytes())).await?;
         }
     };
     Ok(())
