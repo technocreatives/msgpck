@@ -119,32 +119,9 @@ impl MsgPck for String {
 impl crate::AsyncMsgPck for String {
     async fn pack_async(
         &self,
-        mut writer: impl embedded_io_async::Write,
+        writer: impl embedded_io_async::Write,
     ) -> Result<(), crate::PackError> {
-        match self.len() {
-            ..=0x1f => {
-                writer
-                    .write_all(&[Marker::FixStr(self.len() as u8).to_u8()])
-                    .await?;
-            }
-            0x20..=0xff => {
-                writer
-                    .write_all(&[Marker::Str8.to_u8(), self.len() as u8])
-                    .await?;
-            }
-            0x100..=0xffff => {
-                let [a, b] = (self.len() as u16).to_be_bytes();
-                writer.write_all(&[Marker::Str16.to_u8(), a, b]).await?;
-            }
-            _ => {
-                let [a, b, c, d] = (self.len() as u32).to_be_bytes();
-                writer
-                    .write_all(&[Marker::Str32.to_u8(), a, b, c, d])
-                    .await?;
-            }
-        }
-
-        writer.write_all(self.as_bytes()).await?;
+        self.as_str().pack_async(writer).await?;
         Ok(())
     }
 }

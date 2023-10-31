@@ -1,4 +1,4 @@
-use crate::{MsgPck, PackError};
+use crate::PackError;
 
 /// Trait for asynchronously serializing a type using [msgpack][https://msgpack.org/].
 ///
@@ -9,9 +9,7 @@ use crate::{MsgPck, PackError};
 #[cfg(feature = "async")]
 pub trait AsyncMsgPck {
     /// Pack yourself into a writer, asynchronously.
-    async fn pack_async(&self, writer: impl embedded_io_async::Write) -> Result<(), PackError>
-    where
-        Self: Sized;
+    async fn pack_async(&self, writer: impl embedded_io_async::Write) -> Result<(), PackError>;
     // {
     //     use embedded_io_async::Error;
 

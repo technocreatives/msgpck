@@ -14,7 +14,7 @@ where
 }
 
 #[cfg(feature = "async")]
-impl<'r, T: crate::AsyncMsgPck> crate::AsyncMsgPck for &'r T {
+impl<'r, T: crate::AsyncMsgPck + Sized> crate::AsyncMsgPck for &'r T {
     async fn pack_async(
         &self,
         writer: impl embedded_io_async::Write,
