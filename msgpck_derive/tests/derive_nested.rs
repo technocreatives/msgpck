@@ -60,6 +60,7 @@ proptest! {
     }
 
     #[test]
+    #[cfg(features = "size-hints")]
     fn roundtrip_size(s: Foo) {
         let assumed_size = s.size_hint();
         let mut writer: Vec<_> = Vec::new();

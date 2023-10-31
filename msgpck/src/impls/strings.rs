@@ -29,6 +29,7 @@ impl MsgPck for str {
         Ok(())
     }
 
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         let header = match self.len() {
             ..=0x1f => 1,
@@ -110,6 +111,7 @@ impl MsgPck for String {
     }
 
     #[inline]
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         self.as_str().size_hint()
     }

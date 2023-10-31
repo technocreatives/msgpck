@@ -23,6 +23,7 @@ impl<'a, T: MsgPck> MsgPck for &'a [T] {
         Ok(())
     }
 
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         let header = match self.len() {
             ..=0xf => 1,

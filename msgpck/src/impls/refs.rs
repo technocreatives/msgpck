@@ -8,6 +8,7 @@ where
         (**self).pack(writer)
     }
 
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         (**self).size_hint()
     }
@@ -32,6 +33,7 @@ where
         (**self).pack(writer)
     }
 
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         (**self).size_hint()
     }

@@ -13,6 +13,7 @@ impl<T: MsgPck> MsgPck for Vec<T> {
         self.as_slice().pack(writer)
     }
 
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         self.as_slice().size_hint()
     }
@@ -38,6 +39,7 @@ impl MsgPck for ByteVec {
         self.as_byte_slice().pack(writer)
     }
 
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         self.as_byte_slice().size_hint()
     }

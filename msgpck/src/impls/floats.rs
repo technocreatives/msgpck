@@ -11,6 +11,7 @@ impl MsgPck for f32 {
         Ok(())
     }
 
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         SizeHint {
             min: Some(size_of::<Self>() + 1),
@@ -55,6 +56,7 @@ impl MsgPck for f64 {
         Ok(())
     }
 
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         SizeHint {
             min: Some(size_of::<Self>() + 1),

@@ -12,7 +12,7 @@ macro_rules! impl_msgpck_for_int {
                     write::pack_i64(writer, *self as i64)
                 }
 
-                fn size_hint(&self) -> SizeHint {
+                #[cfg(feature = "size-hints")] fn size_hint(&self) -> SizeHint {
                     SizeHint {
                         min: Some(size_of::<Self>()),
                         max: Some(size_of::<Self>() + 1),
@@ -75,7 +75,7 @@ macro_rules! impl_msgpck_for_uint {
                     write::pack_u64(writer, *self as u64)
                 }
 
-                fn size_hint(&self) -> SizeHint {
+                #[cfg(feature = "size-hints")] fn size_hint(&self) -> SizeHint {
                     SizeHint {
                         min: Some(size_of::<Self>()),
                         max: Some(size_of::<Self>() + 1),

@@ -122,6 +122,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                 Ok(())
             }
 
+            #[cfg(feature = "size-hints")]
             fn size_hint(&self) -> ::msgpck::SizeHint {
                 #size_hint
             }

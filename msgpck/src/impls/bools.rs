@@ -9,6 +9,7 @@ impl MsgPck for bool {
         Ok(())
     }
 
+    #[cfg(feature = "size-hints")]
     fn size_hint(&self) -> SizeHint {
         SizeHint {
             min: Some(size_of::<Self>()),
