@@ -11,6 +11,40 @@ impl<const N: usize> MsgPck for String<N> {
     }
 }
 
+#[cfg(all(feature = "async", feature = "alloc"))]
+impl<const N: usize> crate::AsyncMsgPck for String<N> {
+    async fn pack_async(
+        &self,
+        mut writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        match self.len() {
+            ..=0x1f => {
+                writer
+                    .write_all(&[Marker::FixStr(self.len() as u8).to_u8()])
+                    .await?;
+            }
+            0x20..=0xff => {
+                writer
+                    .write_all(&[Marker::Str8.to_u8(), self.len() as u8])
+                    .await?;
+            }
+            0x100..=0xffff => {
+                let [a, b] = (self.len() as u16).to_be_bytes();
+                writer.write_all(&[Marker::Str16.to_u8(), a, b]).await?;
+            }
+            _ => {
+                let [a, b, c, d] = (self.len() as u32).to_be_bytes();
+                writer
+                    .write_all(&[Marker::Str32.to_u8(), a, b, c, d])
+                    .await?;
+            }
+        }
+
+        writer.write_all(self.as_bytes()).await?;
+        Ok(())
+    }
+}
+
 impl<'buf, const N: usize> UnMsgPck<'buf> for String<N> {
     fn unpack(source: &mut &'buf [u8]) -> Result<Self, UnpackError> {
         <&str>::unpack(source).map(String::from)
@@ -20,6 +54,17 @@ impl<'buf, const N: usize> UnMsgPck<'buf> for String<N> {
 impl<T: MsgPck, const N: usize> MsgPck for Vec<T, N> {
     fn pack(&self, writer: &mut dyn MsgWriter) -> Result<(), PackError> {
         self.as_slice().pack(writer)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<T: crate::AsyncMsgPck, const N: usize> crate::AsyncMsgPck for Vec<T, N> {
+    async fn pack_async(
+        &self,
+        writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        self.as_slice().pack_async(writer).await?;
+        Ok(())
     }
 }
 
@@ -53,6 +98,25 @@ where
         for (k, v) in self.iter() {
             k.pack(writer)?;
             v.pack(writer)?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(feature = "async")]
+impl<K, V, const N: usize> crate::AsyncMsgPck for LinearMap<K, V, N>
+where
+    K: crate::AsyncMsgPck + Eq,
+    V: crate::AsyncMsgPck,
+{
+    async fn pack_async(
+        &self,
+        mut writer: impl embedded_io_async::Write,
+    ) -> Result<(), crate::PackError> {
+        crate::utils::pack_map_header_async(&mut writer, self.len()).await?;
+        for (k, v) in self.iter() {
+            k.pack_async(&mut writer).await?;
+            v.pack_async(&mut writer).await?;
         }
         Ok(())
     }
