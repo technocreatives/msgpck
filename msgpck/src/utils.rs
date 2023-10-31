@@ -131,6 +131,7 @@ pub fn unpack_array_header(source: &mut &[u8]) -> Result<usize, UnpackError> {
 /// Helper function that packs a msgpack map header.
 ///
 /// **NOTE**: Keys and values of the map are not included, and must therefore be packed next.
+#[cfg_attr(feature = "reduce-size", inline(never))]
 pub fn pack_map_header(writer: &mut dyn crate::MsgWriter, len: usize) -> Result<(), PackError> {
     match len {
         ..=0xf => writer.write(&[Marker::FixMap(len as u8).to_u8()])?,
@@ -149,6 +150,7 @@ pub fn pack_map_header(writer: &mut dyn crate::MsgWriter, len: usize) -> Result<
 /// Helper function that packs a msgpack map header.
 ///
 /// **NOTE**: Keys and values of the map are not included, and must therefore be packed next.
+#[cfg_attr(feature = "reduce-size", inline(never))]
 #[cfg(feature = "async")]
 pub async fn pack_map_header_async(
     mut writer: impl embedded_io_async::Write,
