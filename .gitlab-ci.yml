@@ -1,0 +1,35 @@
+stages:
+  - build
+  - deploy
+
+default:
+  image: registry.thetc.dev/elevate/core/docker/rust-builder:2023-06-28
+
+build:
+  stage: build
+  script:
+    - cargo check
+
+release-crate:
+  stage: deploy
+  only:
+    - tags
+  before_script:
+    - export REGISTRY_REPO_ID=1035 # https://thetc.dev/rust-shared/registry
+  script:
+    - pushd msgpck-rs-derive
+    - export CRATE_NAME=$(cargo get --name) CRATE_VERSION=$(cargo get version)
+    - export CRATE_FILE=${CRATE_NAME}-${CRATE_VERSION}.crate
+    - cargo package --no-verify
+    - cargo metadata --format-version 1 > metadata.json
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file ../target/package/${CRATE_FILE} "${CI_API_V4_URL}/projects/${REGISTRY_REPO_ID}/packages/generic/${CRATE_NAME}/${CRATE_VERSION}/${CRATE_FILE}"'
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file metadata.json "${CI_API_V4_URL}/projects/${REGISTRY_REPO_ID}/packages/generic/${CRATE_NAME}/${CRATE_VERSION}/metadata.json"'
+    - popd && pushd msgpck-rs
+    - export CRATE_NAME=$(cargo get --name) CRATE_VERSION=$(cargo get version)
+    - export CRATE_FILE=${CRATE_NAME}-${CRATE_VERSION}.crate
+    - cargo package --no-verify
+    - cargo metadata --format-version 1 > metadata.json
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file ../target/package/${CRATE_FILE} "${CI_API_V4_URL}/projects/${REGISTRY_REPO_ID}/packages/generic/${CRATE_NAME}/${CRATE_VERSION}/${CRATE_FILE}"'
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file metadata.json "${CI_API_V4_URL}/projects/${REGISTRY_REPO_ID}/packages/generic/${CRATE_NAME}/${CRATE_VERSION}/metadata.json"'
+
+

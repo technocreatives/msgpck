@@ -1,0 +1,5 @@
+[registries]
+ttc-shared = { index = "ssh://thetc.dev:2222/rust-shared/registry" }
+
+[net]
+git-fetch-with-cli = true
