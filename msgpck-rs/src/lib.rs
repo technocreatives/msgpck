@@ -57,7 +57,10 @@ mod impl_alloc;
 mod impl_std;
 
 #[cfg(feature = "heapless07")]
-mod impl_heapless;
+mod impl_heapless07;
+
+#[cfg(feature = "heapless08")]
+mod impl_heapless08;
 
 pub use enums::{EnumHeader, Variant};
 pub use error::UnpackErr;
@@ -77,7 +80,7 @@ pub trait MsgPack {
     ///     encoded.extend_from_slice(m.as_bytes());
     /// }
     /// println!("{encoded:x?}");
-    /// assert_eq!(encoded, [0xc4, 3, 0xdd, 0xee, 0x03]);
+    /// assert_eq!(encoded, [0x93, 0xcc, 0xdd, 0xcc, 0xee, 0x03]);
     /// ```
     fn pack(&self) -> impl Iterator<Item = Piece<'_>>;
 }
@@ -87,13 +90,10 @@ pub trait MsgUnpack<'buf> {
     /// Unpack a value from a msgpack bytes slice
     ///
     /// ```
-    /// #[cfg(feature = "std")]
-    /// {
     /// use msgpck_rs::MsgUnpack;
     /// let encoded = [0x93, 0xCC, 0xDD, 0xCC, 0xEE, 3];
     /// let decoded: Vec<u8> = Vec::unpack(&mut &encoded[..]).unwrap();
     /// assert_eq!(decoded, &[0xDDu8, 0xEE, 3]);
-    /// }
     /// ```
     fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
     where
