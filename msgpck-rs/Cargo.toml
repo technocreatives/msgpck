@@ -1,11 +1,11 @@
 [package]
 name = "msgpck-rs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.75"
 
 [dependencies]
-msgpck-rs-derive = { version = "0.1.0", registry = "ttc-shared", path = "../msgpck-rs-derive" }
+msgpck-rs-derive = { version = "0.2.0", registry = "ttc-shared", path = "../msgpck-rs-derive" }
 thiserror = { version = "1.0.50", optional = true }
 heapless07 = { package = "heapless", version = "0.7.16", optional = true }
 heapless08 = { package = "heapless", version = "0.8.0", optional = true }
