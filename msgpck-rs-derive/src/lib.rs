@@ -92,11 +92,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     quote! {
         impl<#impl_generics> msgpck_rs::MsgPack for #struct_name<#struct_generics>
         where #generic_bounds {
-            type Iter<'_msgpack> = impl Iterator<Item = ::msgpck_rs::Piece<'_msgpack>>
-            where
-                Self: '_msgpack;
-
-            fn pack<'_msgpack>(&'_msgpack self) -> Self::Iter<'_msgpack> {
+            fn pack<'_msgpack>(&'_msgpack self) -> impl Iterator<Item = ::msgpck_rs::Piece<'_msgpack>> {
                 use ::core::iter::once;
                 use ::msgpck_rs::Marker;
                 #encode_body
@@ -478,12 +474,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
     quote! {
         impl ::msgpck_rs::MsgPack for #enum_name {
-            type Iter<'a> = impl Iterator<Item = ::msgpck_rs::Piece<'a>>
-            where
-                Self: 'a;
-
-            fn pack(&self) -> Self::Iter<'_> {
-
+            fn pack(&self) -> impl Iterator<Item = ::msgpck_rs::Piece<'_>> {
                 // Because we need different msgpack iterator types for each variant, we need an
                 // enum type that impls Iterator to contain them. To avoid naming the inner iterator
                 // types, we use generics. It's not the prettiest, but it works.

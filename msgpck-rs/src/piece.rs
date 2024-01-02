@@ -89,12 +89,8 @@ impl From<u8> for Piece<'static> {
     }
 }
 
-impl<'a> IntoIterator for Pair<'a> {
-    type Item = Piece<'a>;
-
-    type IntoIter = impl Iterator<Item = Piece<'a>>;
-
-    fn into_iter(self) -> Self::IntoIter {
+impl<'a> Pair<'a> {
+    pub fn pieces(self) -> impl Iterator<Item = Piece<'a>> {
         [Some(self.0), self.1].into_iter().flatten()
     }
 }

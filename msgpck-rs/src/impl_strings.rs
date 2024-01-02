@@ -1,40 +1,42 @@
 use crate::{marker::Marker, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
-use core::{iter, str::from_utf8};
+use core::str::from_utf8;
 
 impl MsgPack for str {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        let marker_piece;
+        let len_piece;
 
-    fn pack(&self) -> Self::Iter<'_> {
-        iter::from_generator(move || {
-            match self.len() {
-                ..=0x1f => yield Marker::FixStr(self.len() as u8).into(),
-                ..=0xff => {
-                    yield Marker::Str8.into();
-                    yield (self.len() as u8).into();
-                }
-                ..=0xffff => {
-                    yield Marker::Str16.into();
-                    yield (self.len() as u16).into();
-                }
-                _ => {
-                    yield Marker::Str32.into();
-                    yield (self.len() as u32).into();
-                }
+        match self.len() {
+            ..=0x1f => {
+                marker_piece = Marker::FixStr(self.len() as u8).into();
+                len_piece = None;
             }
+            ..=0xff => {
+                marker_piece = Marker::Str8.into();
+                len_piece = Some((self.len() as u8).into());
+            }
+            ..=0xffff => {
+                marker_piece = Marker::Str16.into();
+                len_piece = Some((self.len() as u16).into());
+            }
+            _ => {
+                marker_piece = Marker::Str32.into();
+                len_piece = Some((self.len() as u32).into());
+            }
+        }
 
-            yield Piece::Bytes(self.as_bytes());
-        })
+        [
+            Some(marker_piece),
+            len_piece,
+            Some(Piece::Bytes(self.as_bytes())),
+        ]
+        .into_iter()
+        .flatten()
     }
 }
 
 impl MsgPack for &str {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         str::pack(self)
     }
 }
@@ -53,7 +55,14 @@ impl<'buf> MsgUnpack<'buf> for &'buf str {
             m => return Err(UnpackErr::WrongMarker(m)),
         };
 
-        let str_bytes: &'buf [u8] = bytes.take(..len).ok_or(UnpackErr::UnexpectedEof)?;
+        if len > bytes.len() {
+            return Err(UnpackErr::UnexpectedEof);
+        }
+
+        //let str_bytes: &'buf [u8] = bytes.take(..len).ok_or(UnpackErr::UnexpectedEof)?;
+        let (str_bytes, rest) = bytes.split_at(len);
+        *bytes = rest;
+
         Ok(from_utf8(str_bytes)?)
     }
 }

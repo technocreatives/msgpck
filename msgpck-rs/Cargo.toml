@@ -2,6 +2,7 @@
 name = "msgpck-rs"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.75"
 
 [dependencies]
 msgpck-rs-derive = { version = "0.1.0", registry = "ttc-shared", path = "../msgpck-rs-derive" }

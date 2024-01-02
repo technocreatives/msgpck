@@ -1,25 +1,20 @@
 use core::iter;
 
-use crate::{util::slice_take, Marker, MsgPack, MsgUnpack, Piece, UnpackErr};
+use crate::{
+    util::{slice_take, Either},
+    Marker, MsgPack, MsgUnpack, Piece, UnpackErr,
+};
 
 impl<T: MsgPack> MsgPack for Option<T> {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
     /// Pack the Option.
     ///
     /// Note that `Option<Option<T>>` will pack into the same representation if either Option is
     /// `None`. i.e. there is no destinction between `None` and `Some(None)`.
-    fn pack(&self) -> Self::Iter<'_> {
-        iter::from_generator(move || match self {
-            Some(i) => {
-                for p in i.pack() {
-                    yield p;
-                }
-            }
-            None => yield Marker::Null.into(),
-        })
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        match self {
+            Some(i) => Either::A(i.pack()),
+            None => Either::B(iter::once(Marker::Null.into())),
+        }
     }
 }
 

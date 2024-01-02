@@ -1,42 +1,26 @@
 use crate::{marker::Marker, piece::Pair, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
 
 impl MsgPack for u8 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
-        pack_u64(u64::from(*self)).into_iter()
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        pack_u64(u64::from(*self)).pieces()
     }
 }
 
 impl MsgPack for u16 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
-        pack_u64(u64::from(*self)).into_iter()
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        pack_u64(u64::from(*self)).pieces()
     }
 }
 
 impl MsgPack for u32 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
-        pack_u64(u64::from(*self)).into_iter()
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        pack_u64(u64::from(*self)).pieces()
     }
 }
 
 impl MsgPack for u64 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
-        pack_u64(*self).into_iter()
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        pack_u64(*self).pieces()
     }
 }
 

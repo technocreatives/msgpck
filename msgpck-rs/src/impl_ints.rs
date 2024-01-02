@@ -4,42 +4,26 @@ use crate::{
 };
 
 impl MsgPack for i8 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
-        pack_i64(i64::from(*self)).into_iter()
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        pack_i64(i64::from(*self)).pieces()
     }
 }
 
 impl MsgPack for i16 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
-        pack_i64(i64::from(*self)).into_iter()
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        pack_i64(i64::from(*self)).pieces()
     }
 }
 
 impl MsgPack for i32 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
-        pack_i64(i64::from(*self)).into_iter()
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        pack_i64(i64::from(*self)).pieces()
     }
 }
 
 impl MsgPack for i64 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
-        pack_i64(*self).into_iter()
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        pack_i64(*self).pieces()
     }
 }
 

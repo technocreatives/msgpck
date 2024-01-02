@@ -8,11 +8,7 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 
 impl<T: MsgPack> MsgPack for Vec<T> {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         pack_array(self.len(), self.iter())
     }
 }
@@ -27,12 +23,8 @@ impl<'buf, T: MsgUnpack<'buf> + 'buf> MsgUnpack<'buf> for Vec<T> {
 }
 
 impl<T: MsgPack> MsgPack for Box<T> {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
     #[inline(always)]
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         self.deref().pack()
     }
 }
@@ -48,12 +40,8 @@ impl<'buf, T: MsgUnpack<'buf> + 'buf> MsgUnpack<'buf> for Box<T> {
 }
 
 impl MsgPack for String {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
     #[inline(always)]
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         self.deref().pack()
     }
 }

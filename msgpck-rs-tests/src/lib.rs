@@ -1,7 +1,5 @@
 //! A simple test that checks whether msgpck_rs is compatible with rmp_serde.
 
-#![feature(impl_trait_in_assoc_type)]
-
 use msgpck_rs::{MsgPack, MsgUnpack};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;

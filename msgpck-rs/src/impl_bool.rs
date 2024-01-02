@@ -2,11 +2,7 @@ use crate::{marker::Marker, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackE
 use core::iter;
 
 impl MsgPack for bool {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         let marker = if *self { Marker::True } else { Marker::False };
         iter::once(marker.into())
     }

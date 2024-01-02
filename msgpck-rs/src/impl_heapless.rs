@@ -9,11 +9,7 @@ impl<T, const N: usize> MsgPack for Vec<T, N>
 where
     T: MsgPack,
 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         pack_array(self.len(), self.iter())
     }
 }
@@ -31,11 +27,7 @@ where
 }
 
 impl<const N: usize> MsgPack for String<N> {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         self.deref().pack()
     }
 }
@@ -59,11 +51,7 @@ where
     K: MsgPack + Eq,
     V: MsgPack,
 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         pack_map(self.len(), self.iter())
     }
 }

@@ -1,11 +1,7 @@
 use crate::{marker::Marker, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
 
 impl MsgPack for f32 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         [Marker::F32.into(), Piece::Bytes4(self.to_be_bytes())].into_iter()
     }
 }
@@ -27,11 +23,7 @@ impl<'buf> MsgUnpack<'buf> for f32 {
 }
 
 impl MsgPack for f64 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         [Marker::F64.into(), Piece::Bytes8(self.to_be_bytes())].into_iter()
     }
 }

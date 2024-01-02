@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
-use crate::{marker::Marker, MsgPack, MsgUnpack, Piece, UnpackErr};
-use core::iter;
+use crate::{marker::Marker, piece::Pair, MsgPack, MsgUnpack, Piece, UnpackErr};
 
 pub fn slice_take<'a, T, const N: usize>(s: &mut &'a [T]) -> Result<&'a [T; N], UnpackErr> {
     if s.len() < N {
@@ -18,19 +17,12 @@ pub fn slice_take<'a, T, const N: usize>(s: &mut &'a [T]) -> Result<&'a [T; N], 
 ///
 /// **NOTE**: Values of the array are not included, and must therefore be packed next.
 pub fn pack_array_header<'a>(len: usize) -> impl Iterator<Item = Piece<'a>> {
-    iter::from_generator(move || {
-        match len {
-            ..=0xf => yield Marker::FixArray(len as u8).into(),
-            ..=0xffff => {
-                yield Marker::Array16.into();
-                yield (len as u16).into();
-            }
-            _ => {
-                yield Marker::Array32.into();
-                yield (len as u32).into();
-            }
-        };
-    })
+    match len {
+        ..=0xf => Pair(Marker::FixArray(len as u8).into(), None),
+        ..=0xffff => Pair(Marker::Array16.into(), Some((len as u16).into())),
+        _ => Pair(Marker::Array32.into(), Some((len as u32).into())),
+    }
+    .pieces()
 }
 
 /// Helper function that tries to decode a msgpack array header from a byte slice.
@@ -54,17 +46,12 @@ pub fn unpack_array_header(bytes: &mut &[u8]) -> Result<usize, UnpackErr> {
 ///
 /// **NOTE**: Keys and values of the map are not included, and must therefore be packed next.
 pub fn pack_map_header<'a>(len: usize) -> impl Iterator<Item = Piece<'a>> {
-    iter::from_generator(move || match len {
-        ..=0xf => yield Marker::FixMap(len as u8).into(),
-        ..=0xffff => {
-            yield Marker::Map16.into();
-            yield (len as u16).into();
-        }
-        _ => {
-            yield Marker::Map32.into();
-            yield (len as u32).into();
-        }
-    })
+    match len {
+        ..=0xf => Pair(Marker::FixMap(len as u8).into(), None),
+        ..=0xffff => Pair(Marker::Map16.into(), Some((len as u16).into())),
+        _ => Pair(Marker::Map32.into(), Some((len as u32).into())),
+    }
+    .pieces()
 }
 
 /// Helper function that tries to decode a msgpack map header from a byte slice.
@@ -132,4 +119,24 @@ where
 {
     let len = unpack_array_header(bytes)?;
     (0..len).map(move |_| T::unpack(bytes)).collect()
+}
+
+pub enum Either<A, B> {
+    A(A),
+    B(B),
+}
+
+impl<A, B, T> Iterator for Either<A, B>
+where
+    A: Iterator<Item = T>,
+    B: Iterator<Item = T>,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Either::A(a) => a.next(),
+            Either::B(b) => b.next(),
+        }
+    }
 }

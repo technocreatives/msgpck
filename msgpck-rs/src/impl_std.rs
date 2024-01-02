@@ -11,11 +11,7 @@ where
     K: MsgPack,
     V: MsgPack,
 {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
-    fn pack(&self) -> Self::Iter<'_> {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
         pack_map(self.len(), self.iter())
     }
 }

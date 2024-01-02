@@ -10,7 +10,6 @@
 //!
 //! Here is a simple example of an async pack function:
 //! ```
-//! #![feature(async_fn_in_trait)]
 //! use msgpck_rs::MsgPack;
 //!
 //! trait AsyncWrite {
@@ -30,9 +29,6 @@
 //! *TODO: decide if we're gonna change serialized representation of enums*
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(impl_trait_in_assoc_type)]
-#![feature(generators, iter_from_generator)]
-#![feature(slice_take)]
 #![allow(clippy::match_overlapping_arm)]
 
 #[cfg(feature = "alloc")]
@@ -72,10 +68,6 @@ pub use piece::Piece;
 
 /// Trait for serializing a type using msgpack.
 pub trait MsgPack {
-    type Iter<'a>: Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
-
     /// Returns an iterator of msgpack [Piece]s. Collect them all to produce a valid msgpack value.
     ///
     /// ```
@@ -84,9 +76,10 @@ pub trait MsgPack {
     /// for m in vec![0xDDu8, 0xEE, 3].pack() {
     ///     encoded.extend_from_slice(m.as_bytes());
     /// }
-    /// assert_eq!(encoded, [0x93, 0xCC, 0xDD, 0xCC, 0xEE, 3]);
+    /// println!("{encoded:x?}");
+    /// assert_eq!(encoded, [0xc4, 3, 0xdd, 0xee, 0x03]);
     /// ```
-    fn pack(&self) -> Self::Iter<'_>;
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>>;
 }
 
 /// Trait for deserializing a type using msgpack.
@@ -94,10 +87,13 @@ pub trait MsgUnpack<'buf> {
     /// Unpack a value from a msgpack bytes slice
     ///
     /// ```
+    /// #[cfg(feature = "std")]
+    /// {
     /// use msgpck_rs::MsgUnpack;
     /// let encoded = [0x93, 0xCC, 0xDD, 0xCC, 0xEE, 3];
     /// let decoded: Vec<u8> = Vec::unpack(&mut &encoded[..]).unwrap();
     /// assert_eq!(decoded, &[0xDDu8, 0xEE, 3]);
+    /// }
     /// ```
     fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
     where

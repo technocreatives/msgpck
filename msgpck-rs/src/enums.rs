@@ -1,8 +1,8 @@
-use core::iter;
-
 use crate::{
-    impl_uints::pack_u64, marker::Marker, util::unpack_map_header, MsgPack, MsgUnpack, Piece,
-    UnpackErr,
+    impl_uints::pack_u64,
+    marker::Marker,
+    util::{unpack_map_header, Either},
+    MsgPack, MsgUnpack, Piece, UnpackErr,
 };
 
 /// The header/key of a msgpack-encoded enum value.
@@ -35,24 +35,13 @@ impl<'a> From<u64> for Variant<'a> {
 /// **NOTE**: This function does not necessarily pack a complete msgpack value.
 /// In the case of an enum with fields, the next value packed must be the fields of the enum.
 pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_>> {
-    iter::from_generator(move || {
-        if !header.unit {
-            yield Marker::FixMap(1).into();
-        }
-
-        match header.variant {
-            Variant::Discriminant(n) => {
-                for p in pack_u64(n) {
-                    yield p;
-                }
-            }
-            Variant::Name(s) => {
-                for p in s.pack() {
-                    yield p;
-                }
-            }
-        }
-    })
+    (!header.unit)
+        .then_some(Marker::FixMap(1).into())
+        .into_iter()
+        .chain(match header.variant {
+            Variant::Discriminant(n) => Either::A(pack_u64(n).pieces()),
+            Variant::Name(s) => Either::B(s.pack()),
+        })
 }
 
 /// Unpack an enum header.

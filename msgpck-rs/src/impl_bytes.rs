@@ -1,30 +1,26 @@
 use crate::{marker::Marker, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
-use core::iter;
 
 impl MsgPack for [u8] {
-    type Iter<'a> = impl Iterator<Item = Piece<'a>>
-    where
-        Self: 'a;
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        let marker_piece;
+        let len_piece;
 
-    fn pack(&self) -> Self::Iter<'_> {
-        iter::from_generator(move || {
-            match self.len() {
-                ..=0xff => {
-                    yield Marker::Bin8.into();
-                    yield (self.len() as u8).into();
-                }
-                ..=0xffff => {
-                    yield Marker::Bin16.into();
-                    yield (self.len() as u16).into();
-                }
-                _ => {
-                    yield Marker::Bin32.into();
-                    yield (self.len() as u32).into();
-                }
+        match self.len() {
+            ..=0xff => {
+                marker_piece = Marker::Bin8.into();
+                len_piece = (self.len() as u8).into();
             }
+            ..=0xffff => {
+                marker_piece = Marker::Bin16.into();
+                len_piece = (self.len() as u16).into();
+            }
+            _ => {
+                marker_piece = Marker::Bin32.into();
+                len_piece = (self.len() as u32).into();
+            }
+        }
 
-            yield Piece::Bytes(self);
-        })
+        [marker_piece, len_piece, Piece::Bytes(self)].into_iter()
     }
 }
 
@@ -41,6 +37,13 @@ impl<'buf> MsgUnpack<'buf> for &'buf [u8] {
             m => return Err(UnpackErr::WrongMarker(m)),
         };
 
-        bytes.take(..len).ok_or(UnpackErr::UnexpectedEof)
+        if len > bytes.len() {
+            return Err(UnpackErr::UnexpectedEof);
+        }
+
+        let (bin, rest) = bytes.split_at(len);
+        *bytes = rest;
+
+        Ok(bin)
     }
 }
