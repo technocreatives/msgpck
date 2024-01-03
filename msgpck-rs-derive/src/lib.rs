@@ -5,8 +5,8 @@ extern crate proc_macro;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, quote_spanned, TokenStreamExt};
 use syn::{
-    parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput, Fields, GenericParam,
-    Index, Member,
+    parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput, Expr, ExprUnary,
+    Fields, GenericParam, Index, Lit, Member, UnOp,
 };
 
 #[proc_macro_derive(MsgPack)]
@@ -223,24 +223,43 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
     let mut unpack_variants = quote! {};
 
-    let mut discriminant = 0u64;
+    let mut discriminant = 0isize;
     for variant in &data.variants {
         if let Some((_, explicit_discriminant)) = &variant.discriminant {
-            // TODO: handle explicitly setting the discriminant.
-            // This loop should track the discriminant in the same fashion as rustc
-            match explicit_discriminant {
-                syn::Expr::Lit(_lit) => {
-                    return quote_spanned! {
-                        explicit_discriminant.span() =>
-                        compile_error!("not supported (yet) by derive(MsgUnpack)");
-                    }
+            let not_supported_err = quote_spanned! {
+                explicit_discriminant.span() =>
+                compile_error!("not supported by derive(MsgUnpack)");
+            };
+
+            let (is_positive, lit) = match explicit_discriminant {
+                Expr::Lit(lit) => (true, lit),
+                Expr::Unary(ExprUnary {
+                    op: UnOp::Neg(_),
+                    expr,
+                    ..
+                }) => match &**expr {
+                    Expr::Lit(lit) => (false, lit),
+                    _ => return not_supported_err,
+                },
+                _ => return not_supported_err,
+            };
+
+            let Lit::Int(lit_int) = &lit.lit else {
+                return not_supported_err;
+            };
+
+            let n = match lit_int.base10_parse() {
+                Err(e) => {
+                    let e = format!("failed to parse integer as isize: {e}");
+                    return quote_spanned! { lit.span() => compile_error!(#e); };
                 }
-                _ => {
-                    return quote_spanned! {
-                        explicit_discriminant.span() =>
-                        compile_error!("not supported by derive(MsgUnpack)");
-                    }
-                }
+                Ok(n) => n,
+            };
+
+            if is_positive {
+                discriminant = n;
+            } else {
+                discriminant = -n;
             }
         }
 

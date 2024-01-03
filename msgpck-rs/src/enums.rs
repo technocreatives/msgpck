@@ -1,5 +1,5 @@
 use crate::{
-    impl_uints::pack_u64,
+    impl_ints::pack_i64,
     marker::Marker,
     util::{unpack_map_header, Either},
     MsgPack, MsgUnpack, Piece, UnpackErr,
@@ -14,7 +14,7 @@ pub struct EnumHeader<'a> {
 
 /// The discriminant or name of an enum variant.
 pub enum Variant<'a> {
-    Discriminant(u64),
+    Discriminant(isize),
     Name(&'a str),
 }
 
@@ -24,8 +24,8 @@ impl<'a> From<&'a str> for Variant<'a> {
     }
 }
 
-impl<'a> From<u64> for Variant<'a> {
-    fn from(discriminant: u64) -> Self {
+impl<'a> From<isize> for Variant<'a> {
+    fn from(discriminant: isize) -> Self {
         Variant::Discriminant(discriminant)
     }
 }
@@ -34,12 +34,24 @@ impl<'a> From<u64> for Variant<'a> {
 ///
 /// **NOTE**: This function does not necessarily pack a complete msgpack value.
 /// In the case of an enum with fields, the next value packed must be the fields of the enum.
+///
+/// # Panic
+/// This function panics if the enum discriminant (which is represented as an isize) is too big to
+/// fit in an i64. On most platforms, this is not possible.
 pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_>> {
     (!header.unit)
         .then_some(Marker::FixMap(1).into())
         .into_iter()
         .chain(match header.variant {
-            Variant::Discriminant(n) => Either::A(pack_u64(n).pieces()),
+            Variant::Discriminant(n) => {
+                if isize::BITS > i64::BITS {
+                    if n > i64::MAX as isize {
+                        panic!("enum discriminant is biffer than i64::MAX");
+                    }
+                }
+
+                Either::A(pack_i64(n as i64).pieces())
+            }
             Variant::Name(s) => Either::B(s.pack()),
         })
 }
@@ -58,7 +70,17 @@ pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, Un
                 unit: true,
             });
         }
-        Marker::FixPos(..) | Marker::U8 | Marker::U16 | Marker::U32 | Marker::U64 => {
+
+        Marker::FixNeg(..)
+        | Marker::I8
+        | Marker::I16
+        | Marker::I32
+        | Marker::I64
+        | Marker::FixPos(..)
+        | Marker::U8
+        | Marker::U16
+        | Marker::U32
+        | Marker::U64 => {
             return Ok(EnumHeader {
                 variant: Variant::Discriminant(MsgUnpack::unpack(bytes)?),
                 unit: true,

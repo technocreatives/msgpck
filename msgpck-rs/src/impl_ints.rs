@@ -27,6 +27,12 @@ impl MsgPack for i64 {
     }
 }
 
+impl MsgPack for isize {
+    fn pack(&self) -> impl Iterator<Item = Piece<'_>> {
+        pack_i64(*self as i64).pieces()
+    }
+}
+
 impl<'buf> MsgUnpack<'buf> for i8 {
     fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
     where
@@ -63,6 +69,16 @@ impl<'buf> MsgUnpack<'buf> for i64 {
         Self: Sized,
     {
         unpack_i64(bytes)
+    }
+}
+
+impl<'buf> MsgUnpack<'buf> for isize {
+    fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, UnpackErr>
+    where
+        Self: Sized,
+    {
+        let n = unpack_i64(bytes)?;
+        Ok(n.try_into()?)
     }
 }
 

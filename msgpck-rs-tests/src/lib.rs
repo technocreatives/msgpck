@@ -1,6 +1,7 @@
 //! A simple test that checks whether msgpck_rs is compatible with rmp_serde.
 
 use msgpck_rs::{MsgPack, MsgUnpack};
+use quickcheck::Arbitrary;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -40,6 +41,33 @@ pub enum Baz {
     Bill,
     Bob(u32),
     Bung { field1: Foo, field2: u32 },
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+#[repr(i8)]
+pub enum CStyleEnum {
+    Zero,
+    One,
+    Five = 5,
+    Six,
+    Eight = 8,
+    Neg = -45,
+    Neg2,
+}
+
+impl Arbitrary for CStyleEnum {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        *g.choose(&[
+            CStyleEnum::Zero,
+            CStyleEnum::One,
+            CStyleEnum::Five,
+            CStyleEnum::Six,
+            CStyleEnum::Eight,
+            CStyleEnum::Neg,
+            CStyleEnum::Neg2,
+        ])
+        .unwrap()
+    }
 }
 
 pub fn test_pack_unpack<T>(original: &T)
