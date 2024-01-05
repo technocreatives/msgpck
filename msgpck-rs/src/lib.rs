@@ -106,6 +106,8 @@ pub trait MsgUnpack<'buf> {
 /// Unless you are implementing those traits by hand, you probably shouldn't be here.
 pub mod helpers {
     pub use crate::enums::{pack_enum_header, unpack_enum_header};
+    pub use crate::impl_ints::{pack_i64, unpack_i64};
+    pub use crate::impl_uints::{pack_u64, unpack_u64};
     pub use crate::util::{
         pack_array_header, pack_map_header, unpack_array_header, unpack_map_header,
     };

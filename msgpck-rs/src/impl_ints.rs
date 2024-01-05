@@ -82,7 +82,7 @@ impl<'buf> MsgUnpack<'buf> for isize {
     }
 }
 
-pub(crate) fn unpack_i64(bytes: &mut &[u8]) -> Result<i64, UnpackErr> {
+pub fn unpack_i64(bytes: &mut &[u8]) -> Result<i64, UnpackErr> {
     let &[b] = slice_take(bytes)?;
     Ok(match Marker::from_u8(b) {
         Marker::FixNeg(i) => i.into(),
@@ -108,7 +108,7 @@ pub(crate) fn unpack_i64(bytes: &mut &[u8]) -> Result<i64, UnpackErr> {
     })
 }
 
-pub(crate) fn pack_i64<'a>(i: i64) -> Pair<'a> {
+pub fn pack_i64<'a>(i: i64) -> Pair<'a> {
     // Pack i into the smallest msgpack type that will fit it.
     match i {
         ..=-2147483649 => Pair(Marker::I64.into(), Some(i.into())),

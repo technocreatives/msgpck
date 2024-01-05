@@ -63,7 +63,7 @@ impl<'buf> MsgUnpack<'buf> for u64 {
     }
 }
 
-pub(crate) fn unpack_u64(bytes: &mut &[u8]) -> Result<u64, UnpackErr> {
+pub fn unpack_u64(bytes: &mut &[u8]) -> Result<u64, UnpackErr> {
     let &[b] = slice_take(bytes)?;
 
     Ok(match Marker::from_u8(b) {
@@ -76,7 +76,7 @@ pub(crate) fn unpack_u64(bytes: &mut &[u8]) -> Result<u64, UnpackErr> {
     })
 }
 
-pub(crate) fn pack_u64<'a>(n: u64) -> Pair<'a> {
+pub fn pack_u64<'a>(n: u64) -> Pair<'a> {
     match n {
         ..=0x7f => Pair(Marker::FixPos(n as u8).into(), None),
         ..=0xff => Pair(Marker::U8.into(), Some((n as u8).into())),
