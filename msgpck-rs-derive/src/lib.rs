@@ -99,7 +99,6 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
             }
         }
     }
-    .into()
 }
 
 /// Generate impl MsgUnpack for a struct

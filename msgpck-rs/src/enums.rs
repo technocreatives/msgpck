@@ -44,10 +44,8 @@ pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_
         .into_iter()
         .chain(match header.variant {
             Variant::Discriminant(n) => {
-                if isize::BITS > i64::BITS {
-                    if n > i64::MAX as isize {
-                        panic!("enum discriminant is biffer than i64::MAX");
-                    }
+                if isize::BITS > i64::BITS && n > i64::MAX as isize {
+                    panic!("enum discriminant is biffer than i64::MAX");
                 }
 
                 Either::A(pack_i64(n as i64).pieces())
