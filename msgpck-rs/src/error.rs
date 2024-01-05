@@ -51,6 +51,9 @@ pub enum UnpackErr {
         error("Tried to deserialize an enum variant with fields, but found a unit discriminator.")
     )]
     UnexpectedUnitVariant,
+
+    #[cfg_attr(feature = "std", error("{0}"))]
+    Other(&'static str),
 }
 
 impl From<TryFromIntError> for UnpackErr {
