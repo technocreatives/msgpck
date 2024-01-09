@@ -40,6 +40,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     let struct_name = &input.ident;
     let struct_len = data.fields.len();
 
+    // TODO: where-clause for structs
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
@@ -106,6 +107,7 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
     let struct_name = &input.ident;
     let struct_len = data.fields.len();
 
+    // TODO: where-clause for structs
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
@@ -206,6 +208,7 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
 fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     let enum_name = &input.ident;
 
+    // TODO: where-clause for enums
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
@@ -213,6 +216,7 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         };
     }
 
+    // TODO: generics for enums
     if !input.generics.params.is_empty() {
         return quote_spanned! {
             input.generics.params.span() =>
@@ -360,6 +364,7 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     let enum_name = &input.ident;
 
+    // TODO: where-clause for enums
     if let Some(where_clause) = &input.generics.where_clause {
         return quote_spanned! {
             where_clause.span() =>
@@ -367,6 +372,7 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         };
     }
 
+    // TODO: generics for enums
     if !input.generics.params.is_empty() {
         return quote_spanned! {
             input.generics.params.span() =>
