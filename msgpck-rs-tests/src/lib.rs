@@ -5,12 +5,12 @@ use quickcheck::Arbitrary;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub struct Foo {
     pub bar: Bar,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub struct Bar {
     pub a: u8,
     pub b: Fizz,
@@ -19,28 +19,43 @@ pub struct Bar {
     pub e: Fgblrp<Vec<i32>, i64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub struct Fizz(pub u16);
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub struct Fuzz;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub struct Fgblrp<T, Y> {
     pub t: T,
     pub y: Y,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub struct WithLifetime<'a> {
     pub s: &'a str,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub enum Baz {
     Bill,
     Bob(u32),
     Bung { field1: Foo, field2: u32 },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack)]
+#[msgpck_rs(untagged)]
+#[serde(untagged)]
+pub enum UntaggedBaz {
+    Bill,
+    Bob(u32),
+    Bung { field1: Foo, field2: u32 },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
+pub struct UntaggedBazBung {
+    pub field1: Foo,
+    pub field2: u32,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]

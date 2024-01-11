@@ -2,50 +2,78 @@
 
 extern crate proc_macro;
 
+use core::fmt;
+use std::{collections::HashSet, fmt::Display};
+
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, quote_spanned, TokenStreamExt};
+use quote::{quote, TokenStreamExt};
 use syn::{
-    parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput, Expr, ExprUnary,
-    Fields, GenericParam, Index, Lit, Member, UnOp,
+    meta::ParseNestedMeta, parse_macro_input, spanned::Spanned, DataEnum, DataStruct, DeriveInput,
+    Expr, ExprUnary, Fields, GenericParam, Index, Lit, Member, UnOp,
 };
 
-#[proc_macro_derive(MsgPack)]
+#[proc_macro_derive(MsgPack, attributes(msgpck_rs))]
 pub fn derive_pack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
         syn::Data::Struct(s) => derive_pack_struct(&input, s),
         syn::Data::Enum(s) => derive_pack_enum(&input, s),
-        syn::Data::Union(_) => quote! {
+        syn::Data::Union(_) => Ok(quote! {
             compile_error!("derive(MsgPack) is not supported for unions");
-        },
+        }),
     }
+    .unwrap_or_else(syn::Error::into_compile_error)
     .into()
 }
 
-#[proc_macro_derive(MsgUnpack)]
+#[proc_macro_derive(MsgUnpack, attributes(msgpck_rs))]
 pub fn derive_unpack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
         syn::Data::Struct(s) => derive_unpack_struct(&input, s),
         syn::Data::Enum(s) => derive_unpack_enum(&input, s),
-        syn::Data::Union(_) => quote! {
+        syn::Data::Union(_) => Ok(quote! {
             compile_error!("derive(MsgUnpack) is not supported for unions");
-        },
+        }),
     }
+    .unwrap_or_else(syn::Error::into_compile_error)
     .into()
 }
 
+#[derive(Clone, PartialEq, Eq, Hash)]
+enum Attribute {
+    /// Pack enum without including information about the variant.
+    Untagged,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+enum AttrLocation {
+    Struct,
+    StructField,
+    Enum,
+    EnumVariant,
+    EnumVariantField,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DeriveKind {
+    MsgPack,
+    MsgUnpack,
+}
+
 /// Generate impl MsgPack for a struct
-fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
+fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result<TokenStream> {
     let struct_name = &input.ident;
     let struct_len = data.fields.len();
+    let _attributes = parse_attributes(&input.attrs, AttrLocation::Struct, DeriveKind::MsgPack)?;
 
     // TODO: where-clause for structs
     if let Some(where_clause) = &input.generics.where_clause {
-        return quote_spanned! {
-            where_clause.span() =>
-            compile_error!("derive(MsgPack) doesn't support where-clauses for structs");
-        };
+        return Err(syn::Error::new(
+            where_clause.span(),
+            "derive(MsgUnpack) doesn't support where-clauses for structs",
+        ));
     }
 
     let mut encode_body = quote! {};
@@ -90,7 +118,7 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
         });
     }
 
-    quote! {
+    Ok(quote! {
         impl<#impl_generics> msgpck_rs::MsgPack for #struct_name<#struct_generics>
         where #generic_bounds {
             fn pack<'_msgpack>(&'_msgpack self) -> impl Iterator<Item = ::msgpck_rs::Piece<'_msgpack>> {
@@ -99,20 +127,21 @@ fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                 #encode_body
             }
         }
-    }
+    })
 }
 
 /// Generate impl MsgUnpack for a struct
-fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
+fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result<TokenStream> {
     let struct_name = &input.ident;
     let struct_len = data.fields.len();
+    let _attributes = parse_attributes(&input.attrs, AttrLocation::Struct, DeriveKind::MsgUnpack)?;
 
     // TODO: where-clause for structs
     if let Some(where_clause) = &input.generics.where_clause {
-        return quote_spanned! {
-            where_clause.span() =>
-            compile_error!("derive(MsgUnpack) doesn't support where-clauses for structs");
-        };
+        return Err(syn::Error::new(
+            where_clause.span(),
+            "derive(MsgUnpack) doesn't support where-clauses for structs",
+        ));
     }
 
     let mut unpack_fields = quote! {};
@@ -188,7 +217,7 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
         }
     };
 
-    quote! {
+    Ok(quote! {
         impl<'_msgpack, #impl_generics> ::msgpck_rs::MsgUnpack<'_msgpack> for #struct_name<#struct_generics>
         where #generic_bounds {
             fn unpack(bytes: &mut &'_msgpack [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
@@ -200,28 +229,28 @@ fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> TokenStream {
                 #unpack_body
             }
         }
-
-    }
+    })
 }
 
 /// Generate impl MsgUnpack for an enum
-fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
+fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<TokenStream> {
     let enum_name = &input.ident;
+    let _attributes = parse_attributes(&input.attrs, AttrLocation::Enum, DeriveKind::MsgUnpack)?;
 
     // TODO: where-clause for enums
     if let Some(where_clause) = &input.generics.where_clause {
-        return quote_spanned! {
-            where_clause.span() =>
-            compile_error!("derive(MsgUnpack) doesn't support where-clauses for enums");
-        };
+        return Err(syn::Error::new(
+            where_clause.span(),
+            "derive(MsgUnpack) doesn't support where-clauses for enums",
+        ));
     }
 
     // TODO: generics for enums
     if !input.generics.params.is_empty() {
-        return quote_spanned! {
-            input.generics.params.span() =>
-            compile_error!("derive(MsgUnpack) doesn't support generics for enums");
-        };
+        return Err(syn::Error::new(
+            input.generics.params.span(),
+            "derive(MsgUnpack) doesn't support generics for enums",
+        ));
     }
 
     let mut unpack_variants = quote! {};
@@ -229,10 +258,10 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
     let mut discriminant = 0isize;
     for variant in &data.variants {
         if let Some((_, explicit_discriminant)) = &variant.discriminant {
-            let not_supported_err = quote_spanned! {
-                explicit_discriminant.span() =>
-                compile_error!("not supported by derive(MsgUnpack)");
-            };
+            let not_supported_err = Err(syn::Error::new(
+                explicit_discriminant.span(),
+                "not supported by derive(MsgUnpack)",
+            ));
 
             let (is_positive, lit) = match explicit_discriminant {
                 Expr::Lit(lit) => (true, lit),
@@ -254,7 +283,7 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
             let n = match lit_int.base10_parse() {
                 Err(e) => {
                     let e = format!("failed to parse integer as isize: {e}");
-                    return quote_spanned! { lit.span() => compile_error!(#e); };
+                    return Err(syn::Error::new(lit.span(), e));
                 }
                 Ok(n) => n,
             };
@@ -340,7 +369,7 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
         discriminant += 1;
     }
 
-    quote! {
+    Ok(quote! {
         impl<'buf> ::msgpck_rs::MsgUnpack<'buf> for #enum_name {
             fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
             where
@@ -357,27 +386,29 @@ fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 })
             }
         }
-    }
+    })
 }
 
 /// Generate impl MsgPack for an enum
-fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
+fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<TokenStream> {
     let enum_name = &input.ident;
+    let attributes = parse_attributes(&input.attrs, AttrLocation::Enum, DeriveKind::MsgPack)?;
+    let untagged = attributes.contains(&Attribute::Untagged);
 
     // TODO: where-clause for enums
     if let Some(where_clause) = &input.generics.where_clause {
-        return quote_spanned! {
-            where_clause.span() =>
-            compile_error!("derive(MsgPack) doesn't support where-clauses for enums");
-        };
+        return Err(syn::Error::new(
+            where_clause.span(),
+            "derive(MsgPack) doesn't support where-clauses for enums",
+        ));
     }
 
     // TODO: generics for enums
     if !input.generics.params.is_empty() {
-        return quote_spanned! {
-            input.generics.params.span() =>
-            compile_error!("derive(MsgPack) doesn't support generics for enums");
-        };
+        return Err(syn::Error::new(
+            input.generics.params.span(),
+            "derive(MsgPack) doesn't support generics for enums",
+        ));
     }
 
     let mut iter_enum_generics = quote! {};
@@ -448,8 +479,8 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
 
                     // pack all the named fields
                     pack_fields.append_all(quote! {
-                        .chain(#field_name.pack())
-                    })
+                        .chain(::msgpck_rs::MsgPack::pack(#field_name))
+                    });
                 }
 
                 // wrap fields pattern in brackets
@@ -483,20 +514,28 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
             syn::Fields::Unit => unit = true,
         }
 
+        let pack = if untagged && unit {
+            // untagged variants with no fields are serialized as null
+            quote! { ::core::iter::once(::msgpck_rs::Marker::Null.into()) }
+        } else if untagged {
+            quote! { ::core::iter::empty() #pack_fields }
+        } else {
+            quote! {
+                ::msgpck_rs::helpers::pack_enum_header(::msgpck_rs::EnumHeader {
+                    variant: #variant_name_str.into(),
+                    unit: #unit,
+                })
+                #pack_fields
+            }
+        };
         pack_variants.append_all(quote! {
             Self::#variant_name #match_fields => {
-                __MsgpackerIter::#variant_name(
-                    ::msgpck_rs::helpers::pack_enum_header(::msgpck_rs::EnumHeader {
-                        variant: #variant_name_str.into(),
-                        unit: #unit,
-                    })
-                    #pack_fields
-                )
+                __MsgpackerIter::#variant_name(#pack)
             }
         });
     }
 
-    quote! {
+    Ok(quote! {
         impl ::msgpck_rs::MsgPack for #enum_name {
             fn pack(&self) -> impl Iterator<Item = ::msgpck_rs::Piece<'_>> {
                 // Because we need different msgpack iterator types for each variant, we need an
@@ -523,7 +562,89 @@ fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> TokenStream {
                 }
             }
         }
+    })
+}
+
+impl Attribute {
+    pub fn is_supported_at(&self, location: AttrLocation, derive: DeriveKind) -> bool {
+        use AttrLocation::*;
+        use DeriveKind::*;
+
+        match (derive, self) {
+            (MsgPack, Attribute::Untagged) => matches!(location, Enum),
+            (MsgUnpack, Attribute::Untagged) => false,
+        }
     }
+}
+
+impl Display for AttrLocation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AttrLocation::Struct => write!(f, "struct"),
+            AttrLocation::StructField => write!(f, "struct field"),
+            AttrLocation::Enum => write!(f, "enum"),
+            AttrLocation::EnumVariant => write!(f, "enum variant"),
+            AttrLocation::EnumVariantField => write!(f, "enum variant field"),
+        }
+    }
+}
+
+fn parse_attributes(
+    attrs: &[syn::Attribute],
+    location: AttrLocation,
+    kind: DeriveKind,
+) -> syn::Result<HashSet<Attribute>> {
+    let mut attributes = HashSet::new();
+    for attr in attrs {
+        if !attr.path().is_ident("msgpck_rs") {
+            continue;
+        }
+
+        let attributes = &mut attributes;
+
+        attr.parse_nested_meta(|meta| {
+            // check if this attribute is filtering for a specific derive kind
+            let specific_kind;
+            if meta.path.is_ident("pack") {
+                specific_kind = Some(DeriveKind::MsgPack);
+            } else if meta.path.is_ident("unpack") {
+                specific_kind = Some(DeriveKind::MsgUnpack);
+            } else {
+                specific_kind = None;
+            };
+
+            let check_attribute =
+                !matches!(specific_kind, Some(specific_kind) if specific_kind != kind);
+
+            let mut parse_arg_meta = |meta: ParseNestedMeta| {
+                let attribute = if meta.path.is_ident("untagged") {
+                    Attribute::Untagged
+                } else {
+                    return Err(meta.error("unexpected attribute"));
+                };
+
+                if check_attribute && !attribute.is_supported_at(location, kind) {
+                    return Err(meta.error(format!(
+                        "this attribute isn't supported by {kind:?} on item \"{location}\""
+                    )));
+                }
+
+                attributes.insert(attribute);
+
+                Ok(())
+            };
+
+            if specific_kind.is_some() {
+                meta.parse_nested_meta(parse_arg_meta)?;
+            } else {
+                parse_arg_meta(meta)?;
+            }
+
+            Ok(())
+        })?;
+    }
+
+    Ok(attributes)
 }
 
 fn array_len_iter(len: usize) -> TokenStream {
