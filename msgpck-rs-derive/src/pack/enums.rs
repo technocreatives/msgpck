@@ -1,11 +1,13 @@
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
 use syn::{spanned::Spanned, DataEnum, DeriveInput};
 
 use crate::{
     attribute::{parse_attributes, AttrLocation, Attribute},
-    DeriveKind,
+    DeriveKind, RESERVED_NAMES,
 };
+
+use super::{pack_fields, PackFields};
 
 /// Generate impl MsgPack for an enum
 pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<TokenStream> {
@@ -13,11 +15,18 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
     let attributes = parse_attributes(&input.attrs, AttrLocation::Enum, DeriveKind::MsgPack)?;
     let untagged = attributes.contains(&Attribute::Untagged);
 
+    if RESERVED_NAMES.contains(&enum_name.to_string().as_str()) {
+        return Err(syn::Error::new(
+            input.ident.span(),
+            "MsgPack: reserved identifier",
+        ));
+    }
+
     // TODO: where-clause for enums
     if let Some(where_clause) = &input.generics.where_clause {
         return Err(syn::Error::new(
             where_clause.span(),
-            "derive(MsgPack) doesn't support where-clauses for enums",
+            "derive(MsgPack) doesn't support where-clauses for enums yet",
         ));
     }
 
@@ -25,7 +34,7 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
     if !input.generics.params.is_empty() {
         return Err(syn::Error::new(
             input.generics.params.span(),
-            "derive(MsgPack) doesn't support generics for enums",
+            "derive(MsgPack) doesn't support generics for enums yet",
         ));
     }
 
@@ -34,6 +43,7 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
     let mut iter_enum_bounds = quote! {};
     let mut iter_enum_match = quote! {};
     let mut pack_variants = quote! {};
+    let mut writer_pack_variants = quote! {};
 
     for variant in &data.variants {
         let variant_name = &variant.ident;
@@ -70,67 +80,12 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
 
         // generate the actual iterator
 
-        let unit: bool;
-
-        // anything that should be packed after the header goes in here
-        let mut pack_fields = quote! {};
-
-        // the pattern match for the enum variant fields
-        let mut match_fields = quote! {};
-
-        match &variant.fields {
-            syn::Fields::Named(fields) => {
-                // if there is more than one field, pack them as an array
-                let fields_len = fields.named.len();
-                if fields_len > 1 {
-                    pack_fields.append_all(quote! {
-                        .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
-                    });
-                }
-
-                unit = fields_len == 0;
-
-                for field in &fields.named {
-                    let field_name = &field.ident;
-                    // pattern match all the fields
-                    match_fields.append_all(quote! {#field_name, });
-
-                    // pack all the named fields
-                    pack_fields.append_all(quote! {
-                        .chain(::msgpck_rs::MsgPack::pack(#field_name))
-                    });
-                }
-
-                // wrap fields pattern in brackets
-                match_fields = quote! { { #match_fields } };
-            }
-            syn::Fields::Unnamed(fields) => {
-                // if there is more than one field, pack them as an array
-                let fields_len = fields.unnamed.len();
-                if fields_len > 1 {
-                    pack_fields.append_all(quote! {
-                        .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
-                    });
-                }
-
-                unit = fields_len == 0;
-
-                for (i, field) in fields.unnamed.iter().enumerate() {
-                    let field_name = Ident::new(&format!("_{i}"), field.span());
-                    // pattern match all the fields
-                    match_fields.append_all(quote! {#field_name, });
-
-                    // pack all the fields
-                    pack_fields.append_all(quote! {
-                        .chain(#field_name.pack())
-                    })
-                }
-
-                // wrap fields pattern in parentheses
-                match_fields = quote! { (#match_fields) };
-            }
-            syn::Fields::Unit => unit = true,
-        }
+        let PackFields {
+            pack_fields,
+            write_pack_fields,
+            match_fields,
+            unit,
+        } = pack_fields(&variant.fields)?;
 
         let pack = if untagged && unit {
             // untagged variants with no fields are serialized as null
@@ -151,12 +106,38 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
                 __MsgpackerIter::#variant_name(#pack)
             }
         });
+
+        let write_pack = if untagged && unit {
+            // untagged variants with no fields are serialized as null
+            quote! {
+                __msgpck_rs_w.write_all(&[::msgpck_rs::Marker::Null.to_u8()])?;
+                __msgpck_rs_n += 1;
+            }
+        } else if untagged {
+            write_pack_fields
+        } else {
+            quote! {
+                for piece in ::msgpck_rs::helpers::pack_enum_header(::msgpck_rs::EnumHeader {
+                    variant: #variant_name_str.into(),
+                    unit: #unit,
+                }) {
+                    __msgpck_rs_w.write_all(piece.as_bytes())?;
+                    __msgpck_rs_n += piece.as_bytes().len();
+                }
+                #write_pack_fields
+            }
+        };
+        writer_pack_variants.append_all(quote! {
+            Self::#variant_name #match_fields => {
+                #write_pack
+            }
+        });
     }
 
     Ok(quote! {
         impl ::msgpck_rs::MsgPack for #enum_name {
             fn pack(&self) -> impl Iterator<Item = ::msgpck_rs::Piece<'_>> {
-                // Because we need different msgpack iterator types for each variant, we need an
+                // Because we need different msgpack iterator types for each variant, we need a new
                 // enum type that impls Iterator to contain them. To avoid naming the inner iterator
                 // types, we use generics. It's not the prettiest, but it works.
                 enum __MsgpackerIter<#iter_enum_generics> {
@@ -178,6 +159,17 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
                 match self {
                     #pack_variants
                 }
+            }
+
+            fn pack_with_writer(&self, __msgpck_rs_w: &mut dyn ::msgpck_rs::Write)
+                -> Result<usize, ::msgpck_rs::BufferOverflow>
+            {
+                let mut __msgpck_rs_n = 0usize;
+                match self {
+                    #writer_pack_variants
+                }
+
+                Ok(__msgpck_rs_n)
             }
         }
     })

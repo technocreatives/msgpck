@@ -1,12 +1,14 @@
 use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
-use syn::{spanned::Spanned, DataStruct, DeriveInput, Fields, GenericParam, Index, Member};
+use syn::{spanned::Spanned, DataStruct, DeriveInput, Fields, GenericParam};
 
 use crate::{
-    array_len_iter,
+    array_len_iter, array_len_write,
     attribute::{parse_attributes, AttrLocation},
     DeriveKind,
 };
+
+use super::{pack_fields, PackFields};
 
 /// Generate impl MsgPack for a struct
 pub fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result<TokenStream> {
@@ -22,7 +24,6 @@ pub fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result
         ));
     }
 
-    let mut encode_body = quote! {};
     let mut generic_bounds = quote! {};
     let impl_generics = &input.generics.params;
     let mut struct_generics = quote!();
@@ -44,33 +45,48 @@ pub fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result
         }
     }
 
-    // serialize newtype structs without using array, this is to maintain compatibility with serde
-    encode_body.append_all(match &data.fields {
-        Fields::Unnamed(..) if struct_len == 1 => {
-            quote! { ::core::iter::empty() }
-        }
-        _ => array_len_iter(data.fields.len()),
-    });
+    let PackFields {
+        pack_fields,
+        write_pack_fields,
+        match_fields,
+        ..
+    } = pack_fields(&data.fields)?;
 
-    for (i, field) in data.fields.iter().enumerate() {
-        let member = field.ident.clone().map(Member::Named).unwrap_or_else(|| {
-            Member::Unnamed(Index {
-                index: i as u32,
-                span: field.span(),
-            })
-        });
-        encode_body.append_all(quote! {
-            .chain(self.#member.pack())
-        });
-    }
+    let mut pack_body = quote! {
+        let #struct_name #match_fields = self;
+    };
+
+    let mut writer_pack_body = quote! {
+        let #struct_name #match_fields = self;
+        let mut __msgpck_rs_n = 0usize;
+    };
+
+    // serialize newtype structs without using array, this is to maintain compatibility with serde
+    match &data.fields {
+        Fields::Unnamed(..) if struct_len == 1 => {
+            pack_body.append_all(quote! { ::core::iter::empty() #pack_fields });
+        }
+        _ => {
+            let array_header_iter = array_len_iter(data.fields.len());
+            pack_body.append_all(quote! { #array_header_iter #pack_fields });
+
+            writer_pack_body.append_all(array_len_write(data.fields.len()));
+        }
+    };
+    writer_pack_body.append_all(write_pack_fields);
 
     Ok(quote! {
         impl<#impl_generics> msgpck_rs::MsgPack for #struct_name<#struct_generics>
         where #generic_bounds {
             fn pack<'_msgpack>(&'_msgpack self) -> impl Iterator<Item = ::msgpck_rs::Piece<'_msgpack>> {
-                use ::core::iter::once;
-                use ::msgpck_rs::Marker;
-                #encode_body
+                #pack_body
+            }
+
+            fn pack_with_writer(&self, __msgpck_rs_w: &mut dyn ::msgpck_rs::Write)
+                -> ::core::result::Result<usize, ::msgpck_rs::BufferOverflow>
+            {
+                #writer_pack_body
+                Ok(__msgpck_rs_n)
             }
         }
     })

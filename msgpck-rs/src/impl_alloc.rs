@@ -4,7 +4,9 @@ use crate::{
     util::{pack_array, unpack_array},
     MsgPack, MsgUnpack, Piece,
 };
+use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
+use alloc::string::String;
 use alloc::vec::Vec;
 
 impl<T: MsgPack> MsgPack for Vec<T> {

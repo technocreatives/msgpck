@@ -40,6 +40,7 @@ mod marker;
 mod packers;
 mod piece;
 mod util;
+mod write;
 
 mod impl_bool;
 mod impl_bytes;
@@ -63,11 +64,12 @@ mod impl_heapless07;
 mod impl_heapless08;
 
 pub use enums::{EnumHeader, Variant};
-pub use error::UnpackErr;
+pub use error::{BufferOverflow, UnpackErr};
 pub use marker::Marker;
 pub use msgpck_rs_derive::{MsgPack, MsgUnpack};
 pub use packers::*;
 pub use piece::Piece;
+pub use write::Write;
 
 /// Trait for serializing a type using msgpack.
 pub trait MsgPack {
@@ -83,6 +85,24 @@ pub trait MsgPack {
     /// assert_eq!(encoded, [0x93, 0xcc, 0xdd, 0xcc, 0xee, 0x03]);
     /// ```
     fn pack(&self) -> impl Iterator<Item = Piece<'_>>;
+
+    /// Pack this value into a [Write], and return how many bytes were packed.
+    ///
+    /// When async packing is not needed, packing directly into a writer can be faster than calling
+    /// [MsgPack::pack]. Note that the default implementation just calls [MsgPack::pack], but
+    /// should be overridden if performance is a concern.
+    ///
+    /// # Errors
+    /// TODO: decide on whether to this takes a `impl Write` or a `dyn Write`, and in the latter
+    /// case, how we should handle errors.
+    fn pack_with_writer(&self, w: &mut dyn Write) -> Result<usize, BufferOverflow> {
+        let mut n = 0;
+        for piece in self.pack() {
+            w.write_all(piece.as_bytes())?;
+            n += piece.as_bytes().len();
+        }
+        Ok(n)
+    }
 }
 
 /// Trait for deserializing a type using msgpack.

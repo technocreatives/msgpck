@@ -2,6 +2,9 @@ use crate::marker::Marker;
 use core::num::TryFromIntError;
 use core::str::Utf8Error;
 
+#[derive(Clone, Debug)]
+pub struct BufferOverflow;
+
 #[derive(Debug)]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum UnpackErr {

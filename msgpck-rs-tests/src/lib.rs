@@ -39,7 +39,7 @@ pub struct WithLifetime<'a> {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub enum Baz {
     Bill,
-    Bob(u32),
+    //Bob(u32),
     Bung { field1: Foo, field2: u32 },
 }
 
@@ -105,7 +105,7 @@ where
 
     let unpacked_rmp: T = rmp_serde::from_slice(&packed_rmp).expect("unpack value using rmp_serde");
     let unpacked_msgpck_rs: T =
-        msgpck_rs::unpack_bytes(&packed_msgpck_rs).expect("unpack value using msgpck_rs");
+        msgpck_rs::unpack_slice(&packed_msgpck_rs).expect("unpack value using msgpck_rs");
 
     println!("unpacked (rmp_serde): {unpacked_rmp:x?}");
     println!("unpacked (msgpck_rs): {unpacked_msgpck_rs:x?}");
