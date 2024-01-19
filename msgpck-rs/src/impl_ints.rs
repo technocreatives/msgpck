@@ -108,14 +108,23 @@ pub fn unpack_i64(bytes: &mut &[u8]) -> Result<i64, UnpackErr> {
     })
 }
 
-pub fn pack_i64<'a>(i: i64) -> Pair<'a> {
+pub const fn pack_i64<'a>(i: i64) -> Pair<'a> {
     // Pack i into the smallest msgpack type that will fit it.
     match i {
-        ..=-2147483649 => Pair(Marker::I64.into(), Some(i.into())),
-        ..=-32769 => Pair(Marker::I32.into(), Some((i as i32).into())),
-        ..=-129 => Pair(Marker::I16.into(), Some((i as i16).into())),
-        ..=-33 => Pair(Marker::I8.into(), Some((i as u8).into())),
-        ..=-1 => Pair(Marker::FixNeg(i as i8).into(), None),
+        ..=-2147483649 => Pair(Piece::from_marker(Marker::I64), Some(Piece::from_i64(i))),
+        ..=-32769 => Pair(
+            Piece::from_marker(Marker::I32),
+            Some(Piece::from_i32(i as i32)),
+        ),
+        ..=-129 => Pair(
+            Piece::from_marker(Marker::I16),
+            Some(Piece::from_i16(i as i16)),
+        ),
+        ..=-33 => Pair(
+            Piece::from_marker(Marker::I8),
+            Some(Piece::from_i8(i as i8)),
+        ),
+        ..=-1 => Pair(Piece::from_marker(Marker::FixNeg(i as i8)), None),
         // If the value is positive, pack as an unsigned integer.
         _ => return pack_u64(i as u64),
     }

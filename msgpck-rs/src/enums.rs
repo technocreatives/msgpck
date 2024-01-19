@@ -2,7 +2,7 @@ use crate::{
     impl_ints::pack_i64,
     marker::Marker,
     util::{unpack_map_header, Either},
-    MsgPack, MsgUnpack, Piece, UnpackErr,
+    BufferOverflow, MsgPack, MsgUnpack, Piece, UnpackErr, Write,
 };
 
 /// The header/key of a msgpack-encoded enum value.
@@ -19,12 +19,14 @@ pub enum Variant<'a> {
 }
 
 impl<'a> From<&'a str> for Variant<'a> {
+    #[inline(always)]
     fn from(name: &'a str) -> Self {
         Variant::Name(name)
     }
 }
 
 impl<'a> From<isize> for Variant<'a> {
+    #[inline(always)]
     fn from(discriminant: isize) -> Self {
         Variant::Discriminant(discriminant)
     }
@@ -52,6 +54,47 @@ pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_
             }
             Variant::Name(s) => Either::B(s.pack()),
         })
+}
+
+/// Pack an enum header into a [Write].
+///
+/// **NOTE**: This function does not necessarily pack a complete msgpack value.
+/// In the case of an enum with fields, the next value packed must be the fields of the enum.
+///
+/// # Panic
+/// This function panics if the enum discriminant (which is represented as an isize) is too big to
+/// fit in an i64. On most platforms, this is not possible.
+pub fn pack_enum_header_to_writer(
+    header: EnumHeader<'_>,
+    w: &mut dyn Write,
+) -> Result<usize, BufferOverflow> {
+    let mut n = 0usize;
+    if !header.unit {
+        let piece = Piece::from_marker(Marker::FixMap(1));
+        w.write_all(piece.as_bytes())?;
+        n += piece.as_bytes().len();
+    }
+
+    match header.variant {
+        Variant::Discriminant(d) => {
+            if isize::BITS > i64::BITS && d > i64::MAX as isize {
+                panic!("enum discriminant is bigger than i64::MAX");
+            }
+
+            for piece in pack_i64(d as i64).pieces() {
+                w.write_all(piece.as_bytes())?;
+                n += piece.as_bytes().len();
+            }
+        }
+        Variant::Name(s) => {
+            for piece in s.pack() {
+                w.write_all(piece.as_bytes())?;
+                n += piece.as_bytes().len();
+            }
+        }
+    }
+
+    Ok(n)
 }
 
 /// Unpack an enum header.

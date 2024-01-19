@@ -76,12 +76,21 @@ pub fn unpack_u64(bytes: &mut &[u8]) -> Result<u64, UnpackErr> {
     })
 }
 
-pub fn pack_u64<'a>(n: u64) -> Pair<'a> {
+pub const fn pack_u64<'a>(n: u64) -> Pair<'a> {
     match n {
-        ..=0x7f => Pair(Marker::FixPos(n as u8).into(), None),
-        ..=0xff => Pair(Marker::U8.into(), Some((n as u8).into())),
-        ..=0xffff => Pair(Marker::U16.into(), Some((n as u16).into())),
-        ..=0xffffffff => Pair(Marker::U32.into(), Some((n as u32).into())),
-        _ => Pair(Marker::U64.into(), Some(n.into())),
+        ..=0x7f => Pair(Piece::from_marker(Marker::FixPos(n as u8)), None),
+        ..=0xff => Pair(
+            Piece::from_marker(Marker::U8),
+            Some(Piece::from_u8(n as u8)),
+        ),
+        ..=0xffff => Pair(
+            Piece::from_marker(Marker::U16),
+            Some(Piece::from_u16(n as u16)),
+        ),
+        ..=0xffff_ffff => Pair(
+            Piece::from_marker(Marker::U32),
+            Some(Piece::from_u32(n as u32)),
+        ),
+        _ => Pair(Piece::from_marker(Marker::U64), Some(Piece::from_u64(n))),
     }
 }

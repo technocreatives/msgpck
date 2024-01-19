@@ -33,57 +33,111 @@ impl Piece<'_> {
             Piece::Byte(b) => slice::from_ref(b),
         }
     }
+
+    #[inline(always)]
+    pub const fn from_marker(m: Marker) -> Self {
+        Self::Byte(m.to_u8())
+    }
+
+    #[inline(always)]
+    pub const fn from_u8(v: u8) -> Self {
+        Self::Byte(v)
+    }
+
+    #[inline(always)]
+    pub const fn from_u16(v: u16) -> Self {
+        Self::Bytes2(v.to_be_bytes())
+    }
+
+    #[inline(always)]
+    pub const fn from_u32(v: u32) -> Self {
+        Self::Bytes4(v.to_be_bytes())
+    }
+
+    #[inline(always)]
+    pub const fn from_u64(v: u64) -> Self {
+        Self::Bytes8(v.to_be_bytes())
+    }
+
+    #[inline(always)]
+    pub const fn from_i8(v: i8) -> Self {
+        Self::Byte(v as u8)
+    }
+
+    #[inline(always)]
+    pub const fn from_i16(v: i16) -> Self {
+        Self::Bytes2(v.to_be_bytes())
+    }
+
+    #[inline(always)]
+    pub const fn from_i32(v: i32) -> Self {
+        Self::Bytes4(v.to_be_bytes())
+    }
+
+    #[inline(always)]
+    pub const fn from_i64(v: i64) -> Self {
+        Self::Bytes8(v.to_be_bytes())
+    }
 }
 
 impl From<Marker> for Piece<'static> {
+    #[inline(always)]
     fn from(m: Marker) -> Self {
-        Self::Byte(m.to_u8())
+        Piece::from_marker(m)
     }
 }
 
 impl From<u64> for Piece<'static> {
+    #[inline(always)]
     fn from(v: u64) -> Self {
         Self::Bytes8(v.to_be_bytes())
     }
 }
 
 impl From<u32> for Piece<'static> {
+    #[inline(always)]
     fn from(v: u32) -> Self {
         Self::Bytes4(v.to_be_bytes())
     }
 }
 
 impl From<u16> for Piece<'static> {
+    #[inline(always)]
     fn from(v: u16) -> Self {
         Self::Bytes2(v.to_be_bytes())
     }
 }
 
 impl From<i64> for Piece<'static> {
+    #[inline(always)]
     fn from(v: i64) -> Self {
         Self::Bytes8(v.to_be_bytes())
     }
 }
 
 impl From<i32> for Piece<'static> {
+    #[inline(always)]
     fn from(v: i32) -> Self {
         Self::Bytes4(v.to_be_bytes())
     }
 }
 
 impl From<i16> for Piece<'static> {
+    #[inline(always)]
     fn from(v: i16) -> Self {
         Self::Bytes2(v.to_be_bytes())
     }
 }
 
 impl<'a> From<&'a [u8]> for Piece<'a> {
+    #[inline(always)]
     fn from(bytes: &'a [u8]) -> Self {
         Self::Bytes(bytes)
     }
 }
 
 impl From<u8> for Piece<'static> {
+    #[inline(always)]
     fn from(v: u8) -> Self {
         Self::Byte(v)
     }

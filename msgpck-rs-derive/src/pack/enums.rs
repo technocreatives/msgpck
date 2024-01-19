@@ -117,13 +117,10 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
             write_pack_fields
         } else {
             quote! {
-                for piece in ::msgpck_rs::helpers::pack_enum_header(::msgpck_rs::EnumHeader {
+                __msgpck_rs_n += ::msgpck_rs::helpers::pack_enum_header_to_writer(::msgpck_rs::EnumHeader {
                     variant: #variant_name_str.into(),
                     unit: #unit,
-                }) {
-                    __msgpck_rs_w.write_all(piece.as_bytes())?;
-                    __msgpck_rs_n += piece.as_bytes().len();
-                }
+                }, __msgpck_rs_w)?;
                 #write_pack_fields
             }
         };
