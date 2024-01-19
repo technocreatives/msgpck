@@ -24,7 +24,7 @@ pub enum Piece<'a> {
 pub struct Pair<'a>(pub Piece<'a>, pub Option<Piece<'a>>);
 
 impl Piece<'_> {
-    pub fn as_bytes(&self) -> &[u8] {
+    pub const fn as_bytes(&self) -> &[u8] {
         match self {
             Piece::Bytes8(b) => b,
             Piece::Bytes4(b) => b,

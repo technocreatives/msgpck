@@ -47,7 +47,7 @@ pub enum Marker {
 
 impl Marker {
     /// Construct a msgpack marker from a single byte.
-    pub fn from_u8(n: u8) -> Marker {
+    pub const fn from_u8(n: u8) -> Marker {
         match n {
             0x00..=0x7f => Marker::FixPos(n),
             0xe0..=0xff => Marker::FixNeg(n as i8),
@@ -91,7 +91,7 @@ impl Marker {
     }
 
     /// Converts a marker object into a single-byte representation.
-    pub fn to_u8(self) -> u8 {
+    pub const fn to_u8(self) -> u8 {
         match self {
             Marker::FixPos(val) => val,
             Marker::FixNeg(val) => val as u8,
