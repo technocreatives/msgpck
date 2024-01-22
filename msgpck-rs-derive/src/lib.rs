@@ -92,23 +92,23 @@ fn array_len_write(len: usize) -> TokenStream {
         ..=0xf => {
             let len = len as u8;
             quote! {
-                __msgpck_rs_w.write_all(&[#marker_t::FixArray(#len).to_u8()])?;
                 __msgpck_rs_n += 1;
+                __msgpck_rs_w.write_all(&[#marker_t::FixArray(#len).to_u8()])?;
             }
         }
         ..=0xffff => {
             let len = len as u16;
             quote! {
+                __msgpck_rs_n += 3;
                 __msgpck_rs_w.write_all(&[#marker_t::Array16.to_u8()])?;
                 __msgpck_rs_w.write_all(::msgpck_rs::Piece::from(#len).as_bytes())?;
-                __msgpck_rs_n += 3;
             }
         }
         _ => {
             quote! {
+                __msgpck_rs_n += 5;
                 __msgpck_rs_w.write_all(&[#marker_t::Array32.to_u8()])?;
                 __msgpck_rs_w.write_all(::msgpck_rs::Piece::from(#len).as_bytes())?;
-                __msgpck_rs_n += 5;
             }
         }
     }

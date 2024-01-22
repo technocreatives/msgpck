@@ -44,6 +44,7 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
     let mut iter_enum_match = quote! {};
     let mut pack_variants = quote! {};
     let mut writer_pack_variants = quote! {};
+    let mut writer_pack_variant_headers = quote! {};
 
     for variant in &data.variants {
         let variant_name = &variant.ident;
@@ -110,25 +111,40 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
         let write_pack = if untagged && unit {
             // untagged variants with no fields are serialized as null
             quote! {
-                __msgpck_rs_w.write_all(&[::msgpck_rs::Marker::Null.to_u8()])?;
                 __msgpck_rs_n += 1;
+                __msgpck_rs_w.write_all(&[::msgpck_rs::Marker::Null.to_u8()])?;
             }
         } else if untagged {
             write_pack_fields
         } else {
-            quote! {
-                __msgpck_rs_n += ::msgpck_rs::helpers::pack_enum_header_to_writer(::msgpck_rs::EnumHeader {
+            writer_pack_variant_headers.append_all(quote! {
+                Self::#variant_name #match_fields =>::msgpck_rs::EnumHeader {
                     variant: #variant_name_str.into(),
                     unit: #unit,
-                }, __msgpck_rs_w)?;
-                #write_pack_fields
-            }
+                },
+            });
+
+            write_pack_fields
         };
         writer_pack_variants.append_all(quote! {
             Self::#variant_name #match_fields => {
                 #write_pack
             }
         });
+    }
+
+    if !untagged {
+        writer_pack_variant_headers = quote! {
+            // create and serialize enum header
+            let header = match self {
+                #writer_pack_variant_headers
+            };
+            __msgpck_rs_n += ::msgpck_rs::helpers::pack_enum_header_to_writer(header, __msgpck_rs_w)?;
+        }
+    } else {
+        writer_pack_variant_headers = quote! {
+            // enum is marked as untagged, so we don't serialize the enum header
+        }
     }
 
     Ok(quote! {
@@ -162,6 +178,9 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
                 -> Result<usize, ::msgpck_rs::BufferOverflow>
             {
                 let mut __msgpck_rs_n = 0usize;
+                #writer_pack_variant_headers
+
+                // serialize variant fields
                 match self {
                     #writer_pack_variants
                 }
