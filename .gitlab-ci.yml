@@ -1,14 +1,20 @@
 stages:
-  - build
+  - test
   - deploy
 
 default:
   image: registry.thetc.dev/elevate/shared/core/docker/rust-builder:2024-01-02
 
 build:
-  stage: build
+  stage: test
   script:
     - cargo check
+
+test:
+  stage:
+    test
+  script:
+    - cd msgpck-rs-tests && cargo test
 
 release-crate:
   stage: deploy
