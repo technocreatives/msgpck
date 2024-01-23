@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
-use syn::{spanned::Spanned, DataEnum, DeriveInput, Expr, ExprUnary, Lit, UnOp};
+use syn::{spanned::Spanned, DataEnum, DeriveInput, Expr, ExprUnary, Fields, Lit, UnOp};
 
 use crate::{
-    attribute::{parse_attributes, AttrLocation},
+    attribute::{parse_attributes, AttrLocation, Attribute},
     DeriveKind,
 };
 
@@ -29,6 +29,8 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
     }
 
     let mut unpack_variants = quote! {};
+
+    let mut other_variant = None;
 
     let mut discriminant = 0isize;
     for variant in &data.variants {
@@ -70,8 +72,34 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
             }
         }
 
+        let variant_attributes = parse_attributes(
+            &variant.attrs,
+            AttrLocation::EnumVariant,
+            DeriveKind::MsgUnpack,
+        )?;
+
         let variant_name = &variant.ident;
         let variant_name_str = variant_name.to_string();
+
+        if variant_attributes.contains(&Attribute::Other) {
+            if !matches!(variant.fields, Fields::Unit) {
+                return Err(syn::Error::new(
+                    variant.fields.span(),
+                    "#[msgpck_rs(other)] must be applied to a unit variant",
+                ));
+            }
+
+            if other_variant.is_some() {
+                return Err(syn::Error::new(
+                    variant.span(),
+                    "there can only be one variant marked #[msgpck_rs(other)]",
+                ));
+            }
+
+            other_variant = Some(variant_name);
+            continue;
+        }
+
         let match_pattern = quote! {
             Discriminant(#discriminant) | Name(#variant_name_str)
         };
@@ -113,6 +141,19 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
             syn::Fields::Unit => {}
             syn::Fields::Named(fields) => {
                 for field in &fields.named {
+                    let field_attributes = parse_attributes(
+                        &field.attrs,
+                        AttrLocation::EnumVariantField,
+                        DeriveKind::MsgUnpack,
+                    )?;
+
+                    if field_attributes.contains(&Attribute::Default) {
+                        return Err(syn::Error::new(
+                            field.span(),
+                            "msgpck_rs(default) is not yet implemented for enum variant fields",
+                        ));
+                    }
+
                     let field_name = field.ident.as_ref().unwrap();
                     construct_fields.append_all(quote! {
                         #field_name: MsgUnpack::unpack(bytes)?,
@@ -120,7 +161,20 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
                 }
             }
             syn::Fields::Unnamed(fields) => {
-                for _ in &fields.unnamed {
+                for field in &fields.unnamed {
+                    let field_attributes = parse_attributes(
+                        &field.attrs,
+                        AttrLocation::EnumVariantField,
+                        DeriveKind::MsgUnpack,
+                    )?;
+
+                    if field_attributes.contains(&Attribute::Default) {
+                        return Err(syn::Error::new(
+                            field.span(),
+                            "msgpck_rs(default) is not yet implemented for enum variant fields",
+                        ));
+                    }
+
                     construct_fields.append_all(quote! {
                         MsgUnpack::unpack(bytes)?,
                     });
@@ -144,6 +198,11 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
         discriminant += 1;
     }
 
+    let unknown_variant_match = match other_variant {
+        Some(other) => quote! { _unknown_variant => Self::#other, },
+        None => quote! { _unknown_variant => return Err(UnpackErr::UnknownVariant) },
+    };
+
     Ok(quote! {
         impl<'buf> ::msgpck_rs::MsgUnpack<'buf> for #enum_name {
             fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
@@ -157,7 +216,7 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
 
                 Ok(match &header.variant {
                     #unpack_variants
-                    _unknown_variant => return Err(UnpackErr::UnknownVariant)
+                    #unknown_variant_match
                 })
             }
         }

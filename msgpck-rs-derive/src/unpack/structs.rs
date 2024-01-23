@@ -3,7 +3,7 @@ use quote::{quote, TokenStreamExt};
 use syn::{spanned::Spanned, DataStruct, DeriveInput, Fields, GenericParam};
 
 use crate::{
-    attribute::{parse_attributes, AttrLocation},
+    attribute::{parse_attributes, AttrLocation, Attribute},
     DeriveKind,
 };
 
@@ -47,6 +47,19 @@ pub fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Resu
     }
 
     for field in data.fields.iter() {
+        let field_attributes = parse_attributes(
+            &field.attrs,
+            AttrLocation::StructField,
+            DeriveKind::MsgUnpack,
+        )?;
+
+        if field_attributes.contains(&Attribute::Default) {
+            return Err(syn::Error::new(
+                field.span(),
+                "msgpck_rs(default) is not yet implemented for struct fields",
+            ));
+        }
+
         if let Some(ident) = &field.ident {
             unpack_fields.append_all(quote! {
                 #ident: MsgUnpack::unpack(bytes)?,
