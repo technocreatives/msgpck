@@ -39,7 +39,7 @@ pub struct WithLifetime<'a> {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub enum Baz {
     Bill,
-    //Bob(u32),
+    Bob(u32),
     Bung { field1: Foo, field2: u32 },
 }
 

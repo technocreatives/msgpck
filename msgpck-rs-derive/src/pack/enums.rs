@@ -93,6 +93,13 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
             quote! { ::core::iter::once(::msgpck_rs::Marker::Null.into()) }
         } else if untagged {
             quote! { ::core::iter::empty() #pack_fields }
+        } else if unit {
+            quote! {
+                ::msgpck_rs::helpers::pack_enum_header(::msgpck_rs::EnumHeader {
+                    variant: #variant_name_str.into(),
+                    unit: #unit,
+                })
+            }
         } else {
             quote! {
                 ::msgpck_rs::helpers::pack_enum_header(::msgpck_rs::EnumHeader {
@@ -148,6 +155,7 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
     }
 
     Ok(quote! {
+        #[automatically_derived]
         impl ::msgpck_rs::MsgPack for #enum_name {
             fn pack(&self) -> impl Iterator<Item = ::msgpck_rs::Piece<'_>> {
                 // Because we need different msgpack iterator types for each variant, we need a new

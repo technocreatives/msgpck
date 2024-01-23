@@ -1,4 +1,4 @@
-use msgpck_rs::unpack_bytes;
+use msgpck_rs::unpack_slice;
 use msgpck_rs_tests::CStyleEnum;
 use quickcheck_macros::quickcheck;
 
@@ -11,6 +11,6 @@ fn unpack_enum_discriminant(e: CStyleEnum) {
     let msgpacked = [0xd0, discriminant as u8];
 
     let deserialized: CStyleEnum =
-        unpack_bytes(&msgpacked[..]).expect("unpack enum from discriminant");
+        unpack_slice(&msgpacked[..]).expect("unpack enum from discriminant");
     assert_eq!(deserialized, e);
 }

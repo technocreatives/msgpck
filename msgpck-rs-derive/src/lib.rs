@@ -51,37 +51,6 @@ pub(crate) enum DeriveKind {
     MsgUnpack,
 }
 
-/// Generate code that packs an array marker for the given length.
-fn array_len_iter(len: usize) -> TokenStream {
-    let marker_t = quote! { ::msgpck_rs::Marker };
-
-    let len: u32 = len.try_into().expect("array length doesn't fit in u32");
-
-    match len {
-        ..=0xf => {
-            let len = len as u8;
-            quote! { ::core::iter::once(#marker_t::FixArray(#len).into()) }
-        }
-        ..=0xffff => {
-            let len = len as u16;
-            quote! {
-                [
-                    #marker_t::Array16.into(),
-                    #len.into(),
-                ].into_iter()
-            }
-        }
-        _ => {
-            quote! {
-                [
-                    #marker_t::Array32.into(),
-                    #len.into(),
-                ].into_iter()
-            }
-        }
-    }
-}
-
 /// Generate code that packs an array marker to a writer for the given length.
 fn array_len_write(len: usize) -> TokenStream {
     let marker_t = quote! { ::msgpck_rs::Marker };

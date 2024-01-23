@@ -108,6 +108,7 @@ pub fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Resu
     };
 
     Ok(quote! {
+        #[automatically_derived]
         impl<'_msgpack, #impl_generics> ::msgpck_rs::MsgUnpack<'_msgpack> for #struct_name<#struct_generics>
         where #generic_bounds {
             fn unpack(bytes: &mut &'_msgpack [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>

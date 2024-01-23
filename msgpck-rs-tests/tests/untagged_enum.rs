@@ -1,4 +1,4 @@
-use msgpck_rs::{pack_vec, unpack_bytes};
+use msgpck_rs::{pack_vec, unpack_slice};
 use msgpck_rs_tests::{Bar, Fgblrp, Fizz, Foo, Fuzz, UntaggedBaz, UntaggedBazBung};
 
 #[test]
@@ -9,7 +9,7 @@ fn pack_unit_enum() {
     let msgpacked = pack_vec(&variant);
 
     println!("packed: {:?}", msgpacked);
-    let unpacked: Option<i32> = unpack_bytes(&msgpacked).expect("unpack UntaggedBaz::Bill");
+    let unpacked: Option<i32> = unpack_slice(&msgpacked).expect("unpack UntaggedBaz::Bill");
 
     assert!(unpacked.is_none());
 }
@@ -22,7 +22,7 @@ fn pack_untagged_newtype_enum() {
     // msgpack representation of a 1 byte unsigned integer
     let msgpacked = pack_vec(&variant);
 
-    let unpacked: u32 = unpack_bytes(&msgpacked).expect("unpack UntaggedBaz::Bob");
+    let unpacked: u32 = unpack_slice(&msgpacked).expect("unpack UntaggedBaz::Bob");
 
     assert_eq!(unpacked, num);
 }
@@ -50,7 +50,7 @@ fn pack_untagged_struct_enum() {
     // msgpack representation of a 1 byte unsigned integer
     let msgpacked = pack_vec(&variant);
 
-    let unpacked: UntaggedBazBung = unpack_bytes(&msgpacked).expect("unpack UntaggedBazBung");
+    let unpacked: UntaggedBazBung = unpack_slice(&msgpacked).expect("unpack UntaggedBazBung");
 
     assert_eq!(unpacked.field1, foo);
     assert_eq!(unpacked.field2, 42);

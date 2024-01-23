@@ -2,7 +2,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::{spanned::Spanned, Fields};
 
-use crate::RESERVED_NAMES;
+use crate::{array_len_write, RESERVED_NAMES};
 
 pub mod enums;
 pub mod structs;
@@ -46,11 +46,12 @@ pub fn pack_fields(fields: &Fields) -> syn::Result<PackFields> {
         Fields::Named(fields) => {
             // if there is more than one field, pack them as an array
             let fields_len = fields.named.len();
-            if fields_len > 1 {
-                pack_fields.append_all(quote! {
-                    .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
-                });
-            }
+            //if fields_len != 1 {
+            pack_fields.append_all(quote! {
+                .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
+            });
+            write_pack_fields.append_all(array_len_write(fields_len));
+            //}
 
             unit = fields_len == 0;
 
@@ -83,10 +84,11 @@ pub fn pack_fields(fields: &Fields) -> syn::Result<PackFields> {
         syn::Fields::Unnamed(fields) => {
             // if there is more than one field, pack them as an array
             let fields_len = fields.unnamed.len();
-            if fields_len > 1 {
+            if fields_len != 1 {
                 pack_fields.append_all(quote! {
                     .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
                 });
+                write_pack_fields.append_all(array_len_write(fields_len));
             }
 
             unit = fields_len == 0;
@@ -109,7 +111,13 @@ pub fn pack_fields(fields: &Fields) -> syn::Result<PackFields> {
             // wrap fields pattern in parentheses
             match_fields = quote! { (#match_fields) };
         }
-        syn::Fields::Unit => unit = true,
+        syn::Fields::Unit => {
+            pack_fields.append_all(quote! {
+                .chain(::msgpck_rs::helpers::pack_array_header(0))
+            });
+            write_pack_fields.append_all(array_len_write(0));
+            unit = true;
+        }
     }
 
     Ok(PackFields {

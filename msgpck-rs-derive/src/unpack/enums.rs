@@ -204,6 +204,7 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
     };
 
     Ok(quote! {
+        #[automatically_derived]
         impl<'buf> ::msgpck_rs::MsgUnpack<'buf> for #enum_name {
             fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
             where
