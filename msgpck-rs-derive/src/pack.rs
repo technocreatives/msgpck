@@ -8,21 +8,21 @@ pub mod enums;
 pub mod structs;
 
 pub struct PackFields {
-    /// ```
+    /// ```ignore
     ///     .chain(field1.pack())
     ///     .chain(field2.pack())
     ///     .chain(field3.pack())
     /// ```
     pub pack_fields: TokenStream,
 
-    /// ```
+    /// ```ignore
     /// __msgpck_rs_n += field1,pack_with_writer(__msgpck_rs_w)?;
     /// __msgpck_rs_n += field2,pack_with_writer(__msgpck_rs_w)?;
     /// __msgpck_rs_n += field3,pack_with_writer(__msgpck_rs_w)?;
     /// ```
     pub write_pack_fields: TokenStream,
 
-    /// ```
+    /// ```ignore
     /// // either
     ///     { field1, field2, field3 }
     /// // or
