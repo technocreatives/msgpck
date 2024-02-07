@@ -1,3 +1,5 @@
+use core::mem;
+
 use crate::BufferOverflow;
 
 pub trait Write {
@@ -7,12 +9,13 @@ pub trait Write {
 impl Write for &mut [u8] {
     fn write_all(&mut self, bytes: &[u8]) -> Result<(), BufferOverflow> {
         let n = bytes.len();
-
-        if self.len() < n {
+        if n > self.len() {
             return Err(BufferOverflow);
         }
 
-        self[..n].copy_from_slice(bytes);
+        let (a, b) = mem::take(self).split_at_mut(n);
+        a.copy_from_slice(bytes);
+        *self = b;
 
         Ok(())
     }
