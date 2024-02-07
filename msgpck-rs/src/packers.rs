@@ -6,9 +6,7 @@ use crate::{BufferOverflow, MsgPack, MsgUnpack, UnpackErr};
 #[cfg(feature = "alloc")]
 pub fn pack_vec(m: &impl MsgPack) -> alloc::vec::Vec<u8> {
     let mut out = alloc::vec![];
-    for p in m.pack() {
-        out.extend_from_slice(p.as_bytes());
-    }
+    let _ = m.pack_with_writer(&mut out); // writing to a Vec can't fail
     out
 }
 
