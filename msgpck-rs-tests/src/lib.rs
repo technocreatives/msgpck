@@ -94,13 +94,19 @@ where
     println!("original: {original:x?}");
 
     let packed_rmp = rmp_serde::to_vec(original).expect("pack value using rmp_serde");
-    let packed_msgpck_rs = msgpck_rs::pack_vec(original);
+    let packed_msgpck_rs = pack_with_iterator(original);
+    let packed_msgpck_rs2 = msgpck_rs::pack_vec(original);
 
-    println!("packed (rmp_serde):   {packed_rmp:x?}");
-    println!("packed (msgpck_rs):   {packed_msgpck_rs:x?}");
+    println!("packed (rmp_serde):        {packed_rmp:x?}");
+    println!("packed (msgpck_rs iter):   {packed_msgpck_rs:x?}");
+    println!("packed (msgpck_rs writer): {packed_msgpck_rs2:x?}");
     assert_eq!(
         packed_rmp, packed_msgpck_rs,
         "msgpck_rs must be compatible with rmp_serde"
+    );
+    assert_eq!(
+        packed_msgpck_rs, packed_msgpck_rs2,
+        "`MsgPack::pack` must be compatible with `MsgPack::pack_with_writer`",
     );
 
     let unpacked_rmp: T = rmp_serde::from_slice(&packed_rmp).expect("unpack value using rmp_serde");
@@ -120,6 +126,16 @@ where
     );
 
     println!();
+}
+
+/// Pack using [MsgPack::pack] instead of [MsgPack::pack_with_writer],
+/// which [msgpck_rs::pack_vec] uses.
+fn pack_with_iterator(v: &impl MsgPack) -> Vec<u8> {
+    let mut out = vec![];
+    for piece in v.pack() {
+        out.extend_from_slice(piece.as_bytes());
+    }
+    out
 }
 
 pub fn test_uint<I: TryFrom<u64>>(int: u64)

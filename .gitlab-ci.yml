@@ -1,6 +1,6 @@
 stages:
   - test
-  - deploy
+  - release
 
 default:
   image: registry.thetc.dev/elevate/shared/core/docker/rust-builder:2024-01-02
@@ -14,10 +14,11 @@ test:
   stage:
     test
   script:
+    - cargo test --features std
     - cd msgpck-rs-tests && cargo test
 
 release-crate:
-  stage: deploy
+  stage: release
   only:
     - tags
   before_script:
