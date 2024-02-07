@@ -131,8 +131,13 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
                 },
             });
 
-            write_pack_fields
+            if unit {
+                quote! {}
+            } else {
+                write_pack_fields
+            }
         };
+
         writer_pack_variants.append_all(quote! {
             Self::#variant_name #match_fields => {
                 #write_pack
