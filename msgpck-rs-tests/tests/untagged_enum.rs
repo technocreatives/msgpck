@@ -6,7 +6,7 @@ fn pack_unit_enum() {
     let variant = UntaggedBaz::Bill;
 
     // msgpack representation of a 1 byte unsigned integer
-    let msgpacked = pack_vec(&variant);
+    let msgpacked = pack_vec(&variant).expect("pack to vec");
 
     println!("packed: {:?}", msgpacked);
     let unpacked: Option<i32> = unpack_slice(&msgpacked).expect("unpack UntaggedBaz::Bill");
@@ -20,7 +20,7 @@ fn pack_untagged_newtype_enum() {
     let variant = UntaggedBaz::Bob(num);
 
     // msgpack representation of a 1 byte unsigned integer
-    let msgpacked = pack_vec(&variant);
+    let msgpacked = pack_vec(&variant).expect("pack to vec");
 
     let unpacked: u32 = unpack_slice(&msgpacked).expect("unpack UntaggedBaz::Bob");
 
@@ -49,7 +49,7 @@ fn pack_untagged_struct_enum() {
     };
 
     // msgpack representation of a 1 byte unsigned integer
-    let msgpacked = pack_vec(&variant);
+    let msgpacked = pack_vec(&variant).expect("pack to vec");
 
     let unpacked: UntaggedBazBung = unpack_slice(&msgpacked).expect("unpack UntaggedBazBung");
 

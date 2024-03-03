@@ -2,7 +2,7 @@ use crate::{
     impl_ints::pack_i64,
     marker::Marker,
     util::{unpack_map_header, Either},
-    BufferOverflow, MsgPack, MsgUnpack, Piece, UnpackErr, Write,
+    MsgPack, MsgUnpack, PackErr, Piece, UnpackErr, Write,
 };
 
 /// The header/key of a msgpack-encoded enum value.
@@ -67,7 +67,7 @@ pub fn pack_enum_header(header: EnumHeader<'_>) -> impl Iterator<Item = Piece<'_
 pub fn pack_enum_header_to_writer(
     header: EnumHeader<'_>,
     w: &mut dyn Write,
-) -> Result<usize, BufferOverflow> {
+) -> Result<usize, PackErr> {
     let mut n = 0usize;
     if !header.unit {
         let piece = Piece::from_marker(Marker::FixMap(1));
@@ -103,7 +103,7 @@ pub fn pack_enum_header_to_writer(
 /// In the case of an enum with fields, the next value unpacked must be the fields of the enum.
 pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, UnpackErr> {
     match bytes
-        .get(0)
+        .first()
         .map(|&b| Marker::from_u8(b))
         .ok_or(UnpackErr::UnexpectedEof)?
     {
@@ -144,7 +144,7 @@ pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, Un
 
     // read the discriminant/name from the map key
     let variant = match bytes
-        .get(0)
+        .first()
         .map(|&b| Marker::from_u8(b))
         .ok_or(UnpackErr::UnexpectedEof)?
     {

@@ -102,7 +102,7 @@ where
 
     let packed_rmp = rmp_serde::to_vec(original).expect("pack value using rmp_serde");
     let packed_msgpck_rs = pack_with_iterator(original);
-    let packed_msgpck_rs2 = msgpck_rs::pack_vec(original);
+    let packed_msgpck_rs2 = msgpck_rs::pack_vec(original).unwrap();
 
     println!("packed (rmp_serde):        {packed_rmp:x?}");
     println!("packed (msgpck_rs iter):   {packed_msgpck_rs:x?}");

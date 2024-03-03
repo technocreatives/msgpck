@@ -70,7 +70,7 @@ pub fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result
             }
 
             fn pack_with_writer(&self, __msgpck_rs_w: &mut dyn ::msgpck_rs::Write)
-                -> ::core::result::Result<usize, ::msgpck_rs::BufferOverflow>
+                -> ::core::result::Result<usize, ::msgpck_rs::PackErr>
             {
                 #writer_pack_body
                 Ok(__msgpck_rs_n)

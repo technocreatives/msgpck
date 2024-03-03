@@ -2,15 +2,34 @@ use crate::marker::Marker;
 use core::num::TryFromIntError;
 use core::str::Utf8Error;
 
-#[derive(Clone, Debug)]
-pub struct BufferOverflow;
+#[derive(Debug)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[non_exhaustive]
+pub enum PackErr {
+    /// Packed value was too big for target buffer.
+    #[cfg_attr(feature = "std", error("Buffer Overflow"))]
+    BufferOverflow,
+
+    /// Failed to allocate memory while unpacking.
+    #[cfg_attr(feature = "std", error("Out of memory"))]
+    OutOfMemory,
+
+    #[cfg(feature = "std")]
+    #[error("I/O Error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[cfg_attr(feature = "std", error("Error: {0}"))]
+    Other(&'static str),
+}
 
 #[derive(Debug)]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum UnpackErr {
+    /// Tried to unpack a value into a buffer that was too small.
     #[cfg_attr(feature = "std", error("Buffer overflow"))]
     BufferOverflow,
 
+    /// Reached EOF while trying to unpack a value.
     #[cfg_attr(feature = "std", error("Unexpected EOF"))]
     UnexpectedEof,
 

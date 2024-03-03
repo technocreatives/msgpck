@@ -182,7 +182,7 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
             }
 
             fn pack_with_writer(&self, __msgpck_rs_w: &mut dyn ::msgpck_rs::Write)
-                -> Result<usize, ::msgpck_rs::BufferOverflow>
+                -> Result<usize, ::msgpck_rs::PackErr>
             {
                 let mut __msgpck_rs_n = 0usize;
                 #writer_pack_variant_headers

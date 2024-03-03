@@ -64,7 +64,7 @@ mod impl_heapless07;
 mod impl_heapless08;
 
 pub use enums::{EnumHeader, Variant};
-pub use error::{BufferOverflow, UnpackErr};
+pub use error::{PackErr, UnpackErr};
 pub use marker::Marker;
 pub use msgpck_rs_derive::{MsgPack, MsgUnpack};
 pub use packers::*;
@@ -95,7 +95,7 @@ pub trait MsgPack {
     /// # Errors
     /// TODO: decide on whether to this takes a `impl Write` or a `dyn Write`, and in the latter
     /// case, how we should handle errors.
-    fn pack_with_writer(&self, w: &mut dyn Write) -> Result<usize, BufferOverflow> {
+    fn pack_with_writer(&self, w: &mut dyn Write) -> Result<usize, PackErr> {
         let mut n = 0;
         for piece in self.pack() {
             w.write_all(piece.as_bytes())?;
