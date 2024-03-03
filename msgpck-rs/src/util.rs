@@ -3,9 +3,11 @@
 use crate::{marker::Marker, piece::Pair, MsgPack, MsgUnpack, Piece, UnpackErr};
 
 pub fn slice_take<'a, T, const N: usize>(s: &mut &'a [T]) -> Result<&'a [T; N], UnpackErr> {
-    let Ok(head) = s[..N].try_into() else {
+    if s.len() < N {
         return Err(UnpackErr::UnexpectedEof);
-    };
+    }
+
+    let head = s[..N].try_into().expect("slice is big enough");
     *s = &s[N..];
 
     Ok(head)
