@@ -1,7 +1,5 @@
-use crate::{
-    impl_uints::pack_u64, marker::Marker, piece::Pair, util::slice_take, MsgPack, MsgUnpack, Piece,
-    UnpackErr,
-};
+use super::uints::pack_u64;
+use crate::{marker::Marker, piece::Pair, util::slice_take, MsgPack, MsgUnpack, Piece, UnpackErr};
 
 impl MsgPack for i8 {
     fn pack(&self) -> impl Iterator<Item = Piece<'_>> {

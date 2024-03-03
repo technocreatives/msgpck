@@ -36,32 +36,12 @@ extern crate alloc;
 
 mod enums;
 mod error;
+mod impls;
 mod marker;
 mod packers;
 mod piece;
 mod util;
 mod write;
-
-mod impl_bool;
-mod impl_bytes;
-mod impl_floats;
-mod impl_ints;
-mod impl_option;
-mod impl_ref;
-mod impl_strings;
-mod impl_uints;
-
-#[cfg(feature = "alloc")]
-mod impl_alloc;
-
-#[cfg(feature = "std")]
-mod impl_std;
-
-#[cfg(feature = "heapless07")]
-mod impl_heapless07;
-
-#[cfg(feature = "heapless08")]
-mod impl_heapless08;
 
 pub use enums::{EnumHeader, Variant};
 pub use error::{PackErr, UnpackErr};
@@ -126,8 +106,8 @@ pub trait MsgUnpack<'buf> {
 /// Unless you are implementing those traits by hand, you probably shouldn't be here.
 pub mod helpers {
     pub use crate::enums::{pack_enum_header, pack_enum_header_to_writer, unpack_enum_header};
-    pub use crate::impl_ints::{pack_i64, unpack_i64};
-    pub use crate::impl_uints::{pack_u64, unpack_u64};
+    pub use crate::impls::ints::{pack_i64, unpack_i64};
+    pub use crate::impls::uints::{pack_u64, unpack_u64};
     pub use crate::util::{
         pack_array_header, pack_map_header, unpack_array_header, unpack_map_header,
     };

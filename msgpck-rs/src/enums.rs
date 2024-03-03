@@ -1,5 +1,5 @@
 use crate::{
-    impl_ints::pack_i64,
+    helpers::pack_i64,
     marker::Marker,
     util::{unpack_map_header, Either},
     MsgPack, MsgUnpack, PackErr, Piece, UnpackErr, Write,
