@@ -16,17 +16,7 @@ pub fn pack_vec<T: MsgPack>(value: &T) -> Result<Vec<u8>, PackErr> {
 /// Pack a [MsgPack] type into a `std::io::Write`.
 #[cfg(feature = "std")]
 pub fn pack_write<T: MsgPack>(w: &mut dyn std::io::Write, value: &T) -> Result<usize, PackErr> {
-    // impl msgpck_rs::Write for this struct that wraps a std::io::Write
-    struct W<'a>(&'a mut dyn std::io::Write);
-
-    impl crate::Write for W<'_> {
-        fn write_all(&mut self, bytes: &[u8]) -> Result<(), PackErr> {
-            std::io::Write::write_all(self.0, bytes)?;
-            Ok(())
-        }
-    }
-
-    let mut w = W(w);
+    let mut w = crate::write::IoWrite(w);
     value.pack_with_writer(&mut w)
 }
 
