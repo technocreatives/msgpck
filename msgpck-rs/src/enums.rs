@@ -102,7 +102,11 @@ pub fn pack_enum_header_to_writer(
 /// **NOTE**: This function does not necessarily unpack a complete msgpack value.
 /// In the case of an enum with fields, the next value unpacked must be the fields of the enum.
 pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, UnpackErr> {
-    match Marker::from_u8(bytes[0]) {
+    match bytes
+        .get(0)
+        .map(|&b| Marker::from_u8(b))
+        .ok_or(UnpackErr::UnexpectedEof)?
+    {
         // if the enum is just a string or an int, it doesn't have any fields.
         // decode the discriminant/name and return early.
         Marker::FixStr(..) | Marker::Str8 | Marker::Str16 | Marker::Str32 => {
@@ -132,14 +136,18 @@ pub fn unpack_enum_header<'a>(bytes: &mut &'a [u8]) -> Result<EnumHeader<'a>, Un
         Marker::FixMap(_) | Marker::Map16 | Marker::Map32 => {
             let len = unpack_map_header(bytes)?;
             if len != 1 {
-                todo!("error on invalid enum map")
+                return Err(UnpackErr::InvalidEnumHeader);
             }
         }
         m => return Err(UnpackErr::WrongMarker(m)),
     }
 
     // read the discriminant/name from the map key
-    let variant = match Marker::from_u8(bytes[0]) {
+    let variant = match bytes
+        .get(0)
+        .map(|&b| Marker::from_u8(b))
+        .ok_or(UnpackErr::UnexpectedEof)?
+    {
         Marker::FixPos(..) | Marker::U8 | Marker::U16 | Marker::U32 | Marker::U64 => {
             Variant::Discriminant(MsgUnpack::unpack(bytes)?)
         }

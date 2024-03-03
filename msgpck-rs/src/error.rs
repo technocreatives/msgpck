@@ -55,6 +55,9 @@ pub enum UnpackErr {
     )]
     UnexpectedUnitVariant,
 
+    #[cfg_attr(feature = "std", error("Error unpacking enum: Invalid header."))]
+    InvalidEnumHeader,
+
     #[cfg_attr(feature = "std", error("{0}"))]
     Other(&'static str),
 }
