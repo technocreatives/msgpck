@@ -10,6 +10,25 @@ pub fn pack_vec(m: &impl MsgPack) -> alloc::vec::Vec<u8> {
     out
 }
 
+#[cfg(feature = "std")]
+pub fn pack_write(w: &mut dyn std::io::Write, m: &impl MsgPack) -> std::io::Result<usize> {
+    struct W<'a, 'b>(&'a mut dyn std::io::Write, &'b mut std::io::Result<()>);
+
+    impl crate::Write for W<'_, '_> {
+        fn write_all(&mut self, bytes: &[u8]) -> Result<(), BufferOverflow> {
+            *self.1 = std::io::Write::write_all(self.0, bytes);
+            Ok(())
+        }
+    }
+
+    let mut result = Ok(());
+    let mut w = W(w, &mut result);
+    let Ok(n) = m.pack_with_writer(&mut w) else {
+        unreachable!()
+    };
+    result.map(|()| n)
+}
+
 /// Pack a [MsgPack] type into a `[u8]`.
 ///
 /// # Returns
