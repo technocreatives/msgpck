@@ -5,7 +5,7 @@
 //!
 //! # Usage
 //!
-//! We also provide functions like [pack_vec] and [unpack_bytes] to convert between rust types and
+//! We also provide functions like [pack_vec] and [unpack_slice] to convert between rust types and
 //! msgpack bytes, but it's easy to define your own.
 //!
 //! Here is a simple example of an async pack function:

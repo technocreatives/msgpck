@@ -24,6 +24,7 @@ pub enum PackErr {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[non_exhaustive]
 pub enum UnpackErr {
     /// Tried to unpack a value into a buffer that was too small.
     #[cfg_attr(feature = "std", error("Buffer overflow"))]

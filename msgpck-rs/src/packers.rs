@@ -7,15 +7,15 @@ use alloc::{vec, vec::Vec};
 
 /// Pack a [MsgPack] type into a `Vec<u8>`.
 #[cfg(feature = "alloc")]
-pub fn pack_vec(m: &impl MsgPack) -> Result<Vec<u8>, PackErr> {
+pub fn pack_vec<T: MsgPack>(value: &T) -> Result<Vec<u8>, PackErr> {
     let mut out = vec![];
-    m.pack_with_writer(&mut out)?;
+    value.pack_with_writer(&mut out)?;
     Ok(out)
 }
 
 /// Pack a [MsgPack] type into a `std::io::Write`.
 #[cfg(feature = "std")]
-pub fn pack_write(w: &mut dyn std::io::Write, m: &impl MsgPack) -> Result<usize, PackErr> {
+pub fn pack_write<T: MsgPack>(w: &mut dyn std::io::Write, value: &T) -> Result<usize, PackErr> {
     // impl msgpck_rs::Write for this struct that wraps a std::io::Write
     struct W<'a>(&'a mut dyn std::io::Write);
 
@@ -27,16 +27,16 @@ pub fn pack_write(w: &mut dyn std::io::Write, m: &impl MsgPack) -> Result<usize,
     }
 
     let mut w = W(w);
-    m.pack_with_writer(&mut w)
+    value.pack_with_writer(&mut w)
 }
 
 /// Pack a [MsgPack] type into a `[u8]`.
 ///
 /// # Returns
-/// If the slice was too small, this returns [BufferOverflow].
+/// If the slice was too small, this returns [PackErr::BufferOverflow].
 /// Otherwise returns the number of bytes written.
-pub fn pack_slice(mut buf: &mut [u8], m: &impl MsgPack) -> Result<usize, PackErr> {
-    m.pack_with_writer(&mut buf)
+pub fn pack_slice<T: MsgPack>(mut buf: &mut [u8], value: &T) -> Result<usize, PackErr> {
+    value.pack_with_writer(&mut buf)
 }
 
 /// Unpack a [MsgUnpack] type from a byte slice.
