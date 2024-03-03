@@ -12,27 +12,29 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
     let enum_name = &input.ident;
     let _attributes = parse_attributes(&input.attrs, AttrLocation::Enum, DeriveKind::MsgUnpack)?;
 
-    // TODO: where-clause for enums
-    if let Some(where_clause) = &input.generics.where_clause {
-        return Err(syn::Error::new(
-            where_clause.span(),
-            "derive(MsgUnpack) doesn't support where-clauses for enums",
-        ));
+    let generics = &input.generics;
+    let generics: TokenStream = generics
+        .type_params()
+        .map(|t| quote! {#t,})
+        .chain(generics.const_params().map(|c| quote! {#c,}))
+        .collect();
+    let lifetimes: TokenStream = input
+        .generics
+        .lifetimes()
+        .map(|_l| quote! { '_msgpck, })
+        .collect();
+    let mut impl_generics = quote! { '_msgpck, #generics };
+
+    for l in input.generics.lifetimes() {
+        impl_generics.append_all(quote! { #l, 'msgpck: #l, });
     }
 
-    // TODO: generics for enums
-    if !input.generics.params.is_empty() {
-        return Err(syn::Error::new(
-            input.generics.params.span(),
-            "derive(MsgUnpack) doesn't support generics for enums",
-        ));
-    }
+    let ty_generics = quote! { <#lifetimes #generics> };
 
     let mut unpack_variants = quote! {};
-
     let mut other_variant = None;
-
     let mut discriminant = 0isize;
+
     for variant in &data.variants {
         if let Some((_, explicit_discriminant)) = &variant.discriminant {
             let not_supported_err = Err(syn::Error::new(
@@ -214,10 +216,10 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
 
     Ok(quote! {
         #[automatically_derived]
-        impl<'buf> ::msgpck_rs::MsgUnpack<'buf> for #enum_name {
-            fn unpack(bytes: &mut &'buf [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
+        impl<#impl_generics> ::msgpck_rs::MsgUnpack<'_msgpck> for #enum_name #ty_generics {
+            fn unpack(bytes: &mut &'_msgpck [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
             where
-                Self: Sized + 'buf,
+                Self: Sized + '_msgpck,
             {
                 use ::msgpck_rs::{UnpackErr, Variant::*, MsgUnpack};
                 use ::msgpck_rs::helpers::{unpack_enum_header, unpack_array_header};

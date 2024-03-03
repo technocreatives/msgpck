@@ -30,14 +30,7 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
         ));
     }
 
-    // TODO: generics for enums
     let generics = &input.generics;
-    //if !input.generics.params.is_empty() {
-    //    return Err(syn::Error::new(
-    //        input.generics.params.span(),
-    //        "derive(MsgPack) doesn't support generics for enums yet",
-    //    ));
-    //}
 
     let mut iter_enum_generics = quote! {};
     let mut iter_enum_variants = quote! {};
