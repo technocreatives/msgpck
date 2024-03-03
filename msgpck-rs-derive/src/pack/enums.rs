@@ -31,12 +31,13 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
     }
 
     // TODO: generics for enums
-    if !input.generics.params.is_empty() {
-        return Err(syn::Error::new(
-            input.generics.params.span(),
-            "derive(MsgPack) doesn't support generics for enums yet",
-        ));
-    }
+    let generics = &input.generics;
+    //if !input.generics.params.is_empty() {
+    //    return Err(syn::Error::new(
+    //        input.generics.params.span(),
+    //        "derive(MsgPack) doesn't support generics for enums yet",
+    //    ));
+    //}
 
     let mut iter_enum_generics = quote! {};
     let mut iter_enum_variants = quote! {};
@@ -86,7 +87,7 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
             write_pack_fields,
             match_fields,
             unit,
-        } = pack_fields(&variant.fields)?;
+        } = pack_fields(&variant.fields, AttrLocation::EnumVariantField)?;
 
         let pack = if untagged && unit {
             // untagged variants with no fields are serialized as null
@@ -161,7 +162,7 @@ pub fn derive_pack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<Tok
 
     Ok(quote! {
         #[automatically_derived]
-        impl ::msgpck_rs::MsgPack for #enum_name {
+        impl #generics ::msgpck_rs::MsgPack for #enum_name #generics {
             fn pack(&self) -> impl Iterator<Item = ::msgpck_rs::Piece<'_>> {
                 // Because we need different msgpack iterator types for each variant, we need a new
                 // enum type that impls Iterator to contain them. To avoid naming the inner iterator

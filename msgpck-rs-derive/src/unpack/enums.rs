@@ -155,9 +155,12 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
                     }
 
                     let field_name = field.ident.as_ref().unwrap();
-                    construct_fields.append_all(quote! {
-                        #field_name: MsgUnpack::unpack(bytes)?,
-                    });
+
+                    construct_fields.append_all(if field_attributes.contains(&Attribute::Skip) {
+                        quote! { #field_name: ::core::default::Default::default(), }
+                    } else {
+                        quote! { #field_name: MsgUnpack::unpack(bytes)?, }
+                    })
                 }
             }
             syn::Fields::Unnamed(fields) => {
@@ -175,9 +178,15 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
                         ));
                     }
 
-                    construct_fields.append_all(quote! {
-                        MsgUnpack::unpack(bytes)?,
-                    });
+                    if field_attributes.contains(&Attribute::Skip) {
+                        continue;
+                    }
+
+                    construct_fields.append_all(if field_attributes.contains(&Attribute::Skip) {
+                        quote! { ::core::default::Default::default(), }
+                    } else {
+                        quote! { MsgUnpack::unpack(bytes)?, }
+                    })
                 }
             }
         };

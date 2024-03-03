@@ -48,7 +48,7 @@ pub fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result
         write_pack_fields,
         match_fields,
         ..
-    } = pack_fields(&data.fields)?;
+    } = pack_fields(&data.fields, AttrLocation::StructField)?;
 
     let pack_body = quote! {
         let #struct_name #match_fields = self;

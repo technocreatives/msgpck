@@ -10,8 +10,20 @@ use crate::{
 /// Generate impl MsgUnpack for a struct
 pub fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result<TokenStream> {
     let struct_name = &input.ident;
-    let struct_len = data.fields.len();
     let _attributes = parse_attributes(&input.attrs, AttrLocation::Struct, DeriveKind::MsgUnpack)?;
+
+    let mut struct_len = 0usize;
+    for field in data.fields.iter() {
+        let field_attributes = parse_attributes(
+            &field.attrs,
+            AttrLocation::StructField,
+            DeriveKind::MsgUnpack,
+        )?;
+
+        if !field_attributes.contains(&Attribute::Skip) {
+            struct_len += 1;
+        }
+    }
 
     // TODO: where-clause for structs
     if let Some(where_clause) = &input.generics.where_clause {
@@ -60,13 +72,15 @@ pub fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Resu
             ));
         }
 
-        if let Some(ident) = &field.ident {
-            unpack_fields.append_all(quote! {
-                #ident: MsgUnpack::unpack(bytes)?,
+        if field_attributes.contains(&Attribute::Skip) {
+            unpack_fields.append_all(match &field.ident {
+                Some(ident) => quote! { #ident: ::core::default::Default::default(), },
+                None => quote! { ::core::default::Default::default(), },
             });
         } else {
-            unpack_fields.append_all(quote! {
-                MsgUnpack::unpack(bytes)?,
+            unpack_fields.append_all(match &field.ident {
+                Some(ident) => quote! { #ident: MsgUnpack::unpack(bytes)?, },
+                None => quote! { MsgUnpack::unpack(bytes)?, },
             });
         }
     }

@@ -19,6 +19,11 @@ pub enum Attribute {
     ///
     /// Same as `#[serde(default)]`
     Default,
+
+    /// Skip this field when packing/unpacking
+    ///
+    /// Same as `#[serde(skip)]`
+    Skip,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -39,6 +44,7 @@ impl Attribute {
             Attribute::Untagged => "untagged",
             Attribute::Other => "other",
             Attribute::Default => "default",
+            Attribute::Skip => "skip",
         }
     }
 
@@ -56,6 +62,8 @@ impl Attribute {
 
             (Attribute::Default, MsgPack) => false,
             (Attribute::Default, MsgUnpack) => matches!(location, EnumVariantField | StructField),
+
+            (Attribute::Skip, _) => matches!(location, EnumVariantField | StructField),
         }
     }
 }

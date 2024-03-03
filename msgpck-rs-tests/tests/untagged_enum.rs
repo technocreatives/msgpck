@@ -1,5 +1,5 @@
 use msgpck_rs::{pack_vec, unpack_slice};
-use msgpck_rs_tests::{Bar, Fgblrp, Fizz, Foo, Fuzz, UntaggedBaz, UntaggedBazBung};
+use msgpck_rs_tests::{Bar, Fgblrp, Fizz, Foo, Fuzz, NotPack, UntaggedBaz, UntaggedBazBung};
 
 #[test]
 fn pack_unit_enum() {
@@ -39,6 +39,7 @@ fn pack_untagged_struct_enum() {
                 t: vec![],
                 y: -1234,
             },
+            skipped: NotPack,
         },
     };
 

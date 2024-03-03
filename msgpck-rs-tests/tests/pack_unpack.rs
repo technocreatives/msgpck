@@ -66,6 +66,7 @@ fn complex_enum() {
                     t: vec![],
                     y: -1234567890,
                 },
+                skipped: NotPack,
             },
         },
         field2: u32::MAX,

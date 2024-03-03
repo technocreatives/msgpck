@@ -17,7 +17,14 @@ pub struct Bar {
     pub c: Vec<u16>,
     pub d: Fuzz,
     pub e: Fgblrp<Vec<i32>, i64>,
+
+    #[serde(skip)]
+    #[msgpck_rs(skip)]
+    pub skipped: NotPack,
 }
+
+#[derive(Clone, Default, Debug, PartialEq)]
+pub struct NotPack;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack, MsgUnpack)]
 pub struct Fizz(pub u16);

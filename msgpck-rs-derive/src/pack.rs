@@ -2,7 +2,11 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::{spanned::Spanned, Fields};
 
-use crate::{array_len_write, RESERVED_NAMES};
+use crate::{
+    array_len_write,
+    attribute::{parse_attributes, AttrLocation, Attribute},
+    DeriveKind, RESERVED_NAMES,
+};
 
 pub mod enums;
 pub mod structs;
@@ -36,7 +40,7 @@ pub struct PackFields {
 }
 
 /// Pack a set of fields, i.e. a struct or the fields of an enum variant.
-pub fn pack_fields(fields: &Fields) -> syn::Result<PackFields> {
+pub fn pack_fields(fields: &Fields, location: AttrLocation) -> syn::Result<PackFields> {
     let unit;
     let mut pack_fields = quote! {};
     let mut write_pack_fields = quote! {};
@@ -44,18 +48,28 @@ pub fn pack_fields(fields: &Fields) -> syn::Result<PackFields> {
 
     match fields {
         Fields::Named(fields) => {
-            // if there is more than one field, pack them as an array
-            let fields_len = fields.named.len();
-            //if fields_len != 1 {
+            let mut fields_len = 0usize;
+            for field in fields.named.iter() {
+                let attributes = parse_attributes(&field.attrs, location, DeriveKind::MsgPack)?;
+                if !attributes.contains(&Attribute::Skip) {
+                    fields_len += 1;
+                }
+            }
+
             pack_fields.append_all(quote! {
                 .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
             });
             write_pack_fields.append_all(array_len_write(fields_len));
-            //}
 
             unit = fields_len == 0;
 
             for field in &fields.named {
+                let field_attributes =
+                    parse_attributes(&field.attrs, location, DeriveKind::MsgPack)?;
+                if field_attributes.contains(&Attribute::Skip) {
+                    continue;
+                }
+
                 let field_name = field.ident.as_ref().expect("fields are named");
 
                 if RESERVED_NAMES.contains(&field_name.to_string().as_str()) {
@@ -79,11 +93,18 @@ pub fn pack_fields(fields: &Fields) -> syn::Result<PackFields> {
             }
 
             // wrap fields pattern in brackets
-            match_fields = quote! { { #match_fields } };
+            match_fields = quote! { { #match_fields .. } };
         }
         syn::Fields::Unnamed(fields) => {
             // if there is more than one field, pack them as an array
-            let fields_len = fields.unnamed.len();
+            let mut fields_len = 0usize;
+            for field in fields.unnamed.iter() {
+                let attributes = parse_attributes(&field.attrs, location, DeriveKind::MsgPack)?;
+                if !attributes.contains(&Attribute::Skip) {
+                    fields_len += 1;
+                }
+            }
+
             if fields_len != 1 {
                 pack_fields.append_all(quote! {
                     .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
@@ -94,6 +115,12 @@ pub fn pack_fields(fields: &Fields) -> syn::Result<PackFields> {
             unit = fields_len == 0;
 
             for (i, field) in fields.unnamed.iter().enumerate() {
+                let field_attributes =
+                    parse_attributes(&field.attrs, location, DeriveKind::MsgPack)?;
+                if field_attributes.contains(&Attribute::Skip) {
+                    continue;
+                }
+
                 let field_name = Ident::new(&format!("_{i}"), field.span());
                 // pattern match all the fields
                 match_fields.append_all(quote! {#field_name, });
@@ -109,7 +136,7 @@ pub fn pack_fields(fields: &Fields) -> syn::Result<PackFields> {
             }
 
             // wrap fields pattern in parentheses
-            match_fields = quote! { (#match_fields) };
+            match_fields = quote! { (#match_fields ..) };
         }
         syn::Fields::Unit => {
             pack_fields.append_all(quote! {
