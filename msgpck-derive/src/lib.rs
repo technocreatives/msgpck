@@ -14,7 +14,7 @@ use unpack::{enums::derive_unpack_enum, structs::derive_unpack_struct};
 
 use crate::pack::structs::derive_pack_struct;
 
-#[proc_macro_derive(MsgPack, attributes(msgpck_rs))]
+#[proc_macro_derive(MsgPack, attributes(msgpck))]
 pub fn derive_pack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
@@ -28,7 +28,7 @@ pub fn derive_pack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     .into()
 }
 
-#[proc_macro_derive(MsgUnpack, attributes(msgpck_rs))]
+#[proc_macro_derive(MsgUnpack, attributes(msgpck))]
 pub fn derive_unpack(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match &input.data {
@@ -43,7 +43,7 @@ pub fn derive_unpack(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 }
 
 /// Identifiers used by the derive macro that could conflict with user defined ones.
-const RESERVED_NAMES: &[&str] = &["__msgpck_rs_w", "__MsgpackerIter"];
+const RESERVED_NAMES: &[&str] = &["__msgpck_w", "__MsgpackerIter"];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum DeriveKind {
@@ -53,7 +53,7 @@ pub(crate) enum DeriveKind {
 
 /// Generate code that packs an array marker to a writer for the given length.
 fn array_len_write(len: usize) -> TokenStream {
-    let marker_t = quote! { ::msgpck_rs::Marker };
+    let marker_t = quote! { ::msgpck::Marker };
 
     let len: u32 = len.try_into().expect("array length doesn't fit in u32");
 
@@ -61,23 +61,23 @@ fn array_len_write(len: usize) -> TokenStream {
         ..=0xf => {
             let len = len as u8;
             quote! {
-                __msgpck_rs_n += 1;
-                __msgpck_rs_w.write_all(&[#marker_t::FixArray(#len).to_u8()])?;
+                __msgpck_n += 1;
+                __msgpck_w.write_all(&[#marker_t::FixArray(#len).to_u8()])?;
             }
         }
         ..=0xffff => {
             let len = len as u16;
             quote! {
-                __msgpck_rs_n += 3;
-                __msgpck_rs_w.write_all(&[#marker_t::Array16.to_u8()])?;
-                __msgpck_rs_w.write_all(::msgpck_rs::Piece::from(#len).as_bytes())?;
+                __msgpck_n += 3;
+                __msgpck_w.write_all(&[#marker_t::Array16.to_u8()])?;
+                __msgpck_w.write_all(::msgpck::Piece::from(#len).as_bytes())?;
             }
         }
         _ => {
             quote! {
-                __msgpck_rs_n += 5;
-                __msgpck_rs_w.write_all(&[#marker_t::Array32.to_u8()])?;
-                __msgpck_rs_w.write_all(::msgpck_rs::Piece::from(#len).as_bytes())?;
+                __msgpck_n += 5;
+                __msgpck_w.write_all(&[#marker_t::Array32.to_u8()])?;
+                __msgpck_w.write_all(::msgpck::Piece::from(#len).as_bytes())?;
             }
         }
     }

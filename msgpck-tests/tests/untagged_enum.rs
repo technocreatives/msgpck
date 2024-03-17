@@ -1,5 +1,5 @@
-use msgpck_rs::{pack_vec, unpack_slice};
-use msgpck_rs_tests::{Bar, Fgblrp, Fizz, Foo, Fuzz, NotPack, UntaggedBaz, UntaggedBazBung};
+use msgpck::{pack_vec, unpack_slice};
+use msgpck_tests::{Bar, Fgblrp, Fizz, Foo, Fuzz, NotPack, UntaggedBaz, UntaggedBazBung};
 
 #[test]
 fn pack_unit_enum() {

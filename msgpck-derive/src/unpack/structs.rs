@@ -51,7 +51,7 @@ pub fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Resu
                 let t = &t.ident;
                 struct_generics.append_all(quote! { #t, });
                 generic_bounds.append_all(quote! {
-                    #t: ::msgpck_rs::MsgUnpack<'_msgpack>,
+                    #t: ::msgpck::MsgUnpack<'_msgpack>,
                 });
             }
             GenericParam::Const(..) => continue,
@@ -68,7 +68,7 @@ pub fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Resu
         if field_attributes.contains(&Attribute::Default) {
             return Err(syn::Error::new(
                 field.span(),
-                "msgpck_rs(default) is not yet implemented for struct fields",
+                "msgpck(default) is not yet implemented for struct fields",
             ));
         }
 
@@ -123,13 +123,13 @@ pub fn derive_unpack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Resu
 
     Ok(quote! {
         #[automatically_derived]
-        impl<'_msgpack, #impl_generics> ::msgpck_rs::MsgUnpack<'_msgpack> for #struct_name<#struct_generics>
+        impl<'_msgpack, #impl_generics> ::msgpck::MsgUnpack<'_msgpack> for #struct_name<#struct_generics>
         where #generic_bounds {
-            fn unpack(bytes: &mut &'_msgpack [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
+            fn unpack(bytes: &mut &'_msgpack [u8]) -> Result<Self, ::msgpck::UnpackErr>
             where
                 Self: Sized,
             {
-                use ::msgpck_rs::{MsgUnpack, UnpackErr, helpers::unpack_array_header};
+                use ::msgpck::{MsgUnpack, UnpackErr, helpers::unpack_array_header};
 
                 #unpack_body
             }

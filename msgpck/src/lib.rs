@@ -10,7 +10,7 @@
 //!
 //! Here is a simple example of an async pack function:
 //! ```
-//! use msgpck_rs::MsgPack;
+//! use msgpck::MsgPack;
 //!
 //! trait AsyncWrite {
 //!     async fn write(&mut self, bytes: &[u8]);
@@ -46,7 +46,7 @@ mod write;
 pub use enums::{EnumHeader, Variant};
 pub use error::{PackErr, UnpackErr};
 pub use marker::Marker;
-pub use msgpck_rs_derive::{MsgPack, MsgUnpack};
+pub use msgpck_derive::{MsgPack, MsgUnpack};
 pub use packers::*;
 pub use piece::Piece;
 pub use write::Write;
@@ -56,7 +56,7 @@ pub trait MsgPack {
     /// Returns an iterator of msgpack [Piece]s. Collect them all to produce a valid msgpack value.
     ///
     /// ```
-    /// use msgpck_rs::MsgPack;
+    /// use msgpck::MsgPack;
     /// let mut encoded = vec![];
     /// for m in vec![0xDDu8, 0xEE, 3].pack() {
     ///     encoded.extend_from_slice(m.as_bytes());
@@ -90,7 +90,7 @@ pub trait MsgUnpack<'buf> {
     /// Unpack a value from a msgpack bytes slice
     ///
     /// ```
-    /// use msgpck_rs::MsgUnpack;
+    /// use msgpck::MsgUnpack;
     /// let encoded = [0x93, 0xCC, 0xDD, 0xCC, 0xEE, 3];
     /// let decoded: Vec<u8> = Vec::unpack(&mut &encoded[..]).unwrap();
     /// assert_eq!(decoded, &[0xDDu8, 0xEE, 3]);

@@ -1,5 +1,5 @@
-use msgpck_rs::unpack_slice;
-use msgpck_rs_tests::CStyleEnum;
+use msgpck::unpack_slice;
+use msgpck_tests::CStyleEnum;
 use quickcheck_macros::quickcheck;
 
 /// Test to unpack an enum using the discriminant integer value, not the name.

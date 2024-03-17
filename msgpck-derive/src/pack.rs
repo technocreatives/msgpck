@@ -20,9 +20,9 @@ pub struct PackFields {
     pub pack_fields: TokenStream,
 
     /// ```ignore
-    /// __msgpck_rs_n += field1,pack_with_writer(__msgpck_rs_w)?;
-    /// __msgpck_rs_n += field2,pack_with_writer(__msgpck_rs_w)?;
-    /// __msgpck_rs_n += field3,pack_with_writer(__msgpck_rs_w)?;
+    /// __msgpck_n += field1,pack_with_writer(__msgpck_w)?;
+    /// __msgpck_n += field2,pack_with_writer(__msgpck_w)?;
+    /// __msgpck_n += field3,pack_with_writer(__msgpck_w)?;
     /// ```
     pub write_pack_fields: TokenStream,
 
@@ -57,7 +57,7 @@ pub fn pack_fields(fields: &Fields, location: AttrLocation) -> syn::Result<PackF
             }
 
             pack_fields.append_all(quote! {
-                .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
+                .chain(::msgpck::helpers::pack_array_header(#fields_len))
             });
             write_pack_fields.append_all(array_len_write(fields_len));
 
@@ -84,11 +84,11 @@ pub fn pack_fields(fields: &Fields, location: AttrLocation) -> syn::Result<PackF
 
                 // pack all the named fields
                 pack_fields.append_all(quote! {
-                    .chain(::msgpck_rs::MsgPack::pack(#field_name))
+                    .chain(::msgpck::MsgPack::pack(#field_name))
                 });
 
                 write_pack_fields.append_all(quote! {
-                    __msgpck_rs_n += ::msgpck_rs::MsgPack::pack_with_writer(#field_name, __msgpck_rs_w)?;
+                    __msgpck_n += ::msgpck::MsgPack::pack_with_writer(#field_name, __msgpck_w)?;
                 });
             }
 
@@ -107,7 +107,7 @@ pub fn pack_fields(fields: &Fields, location: AttrLocation) -> syn::Result<PackF
 
             if fields_len != 1 {
                 pack_fields.append_all(quote! {
-                    .chain(::msgpck_rs::helpers::pack_array_header(#fields_len))
+                    .chain(::msgpck::helpers::pack_array_header(#fields_len))
                 });
                 write_pack_fields.append_all(array_len_write(fields_len));
             }
@@ -131,7 +131,7 @@ pub fn pack_fields(fields: &Fields, location: AttrLocation) -> syn::Result<PackF
                 });
 
                 write_pack_fields.append_all(quote! {
-                    __msgpck_rs_n += ::msgpck_rs::MsgPack::pack_with_writer(#field_name, __msgpck_rs_w)?;
+                    __msgpck_n += ::msgpck::MsgPack::pack_with_writer(#field_name, __msgpck_w)?;
                 });
             }
 
@@ -140,7 +140,7 @@ pub fn pack_fields(fields: &Fields, location: AttrLocation) -> syn::Result<PackF
         }
         syn::Fields::Unit => {
             pack_fields.append_all(quote! {
-                .chain(::msgpck_rs::helpers::pack_array_header(0))
+                .chain(::msgpck::helpers::pack_array_header(0))
             });
             write_pack_fields.append_all(array_len_write(0));
             unit = true;

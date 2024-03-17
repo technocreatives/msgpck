@@ -1,9 +1,9 @@
 [package]
-name = "msgpck-rs-tests"
+name = "msgpck-tests"
 edition = "2021"
 
 [dependencies]
-msgpck-rs = { path = "../msgpck-rs", features = ["std"] }
+msgpck = { path = "../msgpck", features = ["std"] }
 thiserror = { version = "1.0.50", optional = true }
 serde = { version = "1.0.189", features = ["derive"] }
 rmp-serde = "1.1.2"

@@ -1,6 +1,6 @@
-//! A simple test that checks whether msgpck_rs is compatible with rmp_serde.
+//! A simple test that checks whether msgpck is compatible with rmp_serde.
 
-use msgpck_rs::{MsgPack, MsgUnpack};
+use msgpck::{MsgPack, MsgUnpack};
 use quickcheck::Arbitrary;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -19,7 +19,7 @@ pub struct Bar {
     pub e: Fgblrp<Vec<i32>, i64>,
 
     #[serde(skip)]
-    #[msgpck_rs(skip)]
+    #[msgpck(skip)]
     pub skipped: NotPack,
 }
 
@@ -51,7 +51,7 @@ pub enum Baz {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, MsgPack)]
-#[msgpck_rs(untagged)]
+#[msgpck(untagged)]
 #[serde(untagged)]
 pub enum UntaggedBaz {
     Bill,
@@ -101,42 +101,42 @@ where
     println!("original: {original:x?}");
 
     let packed_rmp = rmp_serde::to_vec(original).expect("pack value using rmp_serde");
-    let packed_msgpck_rs = pack_with_iterator(original);
-    let packed_msgpck_rs2 = msgpck_rs::pack_vec(original).unwrap();
+    let packed_msgpck = pack_with_iterator(original);
+    let packed_msgpck2 = msgpck::pack_vec(original).unwrap();
 
     println!("packed (rmp_serde):        {packed_rmp:x?}");
-    println!("packed (msgpck_rs iter):   {packed_msgpck_rs:x?}");
-    println!("packed (msgpck_rs writer): {packed_msgpck_rs2:x?}");
+    println!("packed (msgpck iter):   {packed_msgpck:x?}");
+    println!("packed (msgpck writer): {packed_msgpck2:x?}");
     assert_eq!(
-        packed_rmp, packed_msgpck_rs,
-        "msgpck_rs must be compatible with rmp_serde"
+        packed_rmp, packed_msgpck,
+        "msgpck must be compatible with rmp_serde"
     );
     assert_eq!(
-        packed_msgpck_rs, packed_msgpck_rs2,
+        packed_msgpck, packed_msgpck2,
         "`MsgPack::pack` must be compatible with `MsgPack::pack_with_writer`",
     );
 
     let unpacked_rmp: T = rmp_serde::from_slice(&packed_rmp).expect("unpack value using rmp_serde");
-    let unpacked_msgpck_rs: T =
-        msgpck_rs::unpack_slice(&packed_msgpck_rs).expect("unpack value using msgpck_rs");
+    let unpacked_msgpck: T =
+        msgpck::unpack_slice(&packed_msgpck).expect("unpack value using msgpck");
 
     println!("unpacked (rmp_serde): {unpacked_rmp:x?}");
-    println!("unpacked (msgpck_rs): {unpacked_msgpck_rs:x?}");
+    println!("unpacked (msgpck): {unpacked_msgpck:x?}");
 
     assert_eq!(
         original, &unpacked_rmp,
         "must be the same after unpacking with rmp"
     );
     assert_eq!(
-        original, &unpacked_msgpck_rs,
-        "must be the same after unpacking with msgpck_rs"
+        original, &unpacked_msgpck,
+        "must be the same after unpacking with msgpck"
     );
 
     println!();
 }
 
 /// Pack using [MsgPack::pack] instead of [MsgPack::pack_with_writer],
-/// which [msgpck_rs::pack_vec] uses.
+/// which [msgpck::pack_vec] uses.
 fn pack_with_iterator(v: &impl MsgPack) -> Vec<u8> {
     let mut out = vec![];
     for piece in v.pack() {

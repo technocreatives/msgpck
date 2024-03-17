@@ -1,4 +1,4 @@
-use msgpck_rs_tests::*;
+use msgpck_tests::*;
 use quickcheck_macros::quickcheck;
 use std::collections::HashMap;
 

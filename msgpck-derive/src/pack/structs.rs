@@ -36,7 +36,7 @@ pub fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result
                 let t = &t.ident;
                 struct_generics.append_all(quote! { #t, });
                 generic_bounds.append_all(quote! {
-                    #t: ::msgpck_rs::MsgPack,
+                    #t: ::msgpck::MsgPack,
                 });
             }
             GenericParam::Const(..) => continue,
@@ -57,23 +57,23 @@ pub fn derive_pack_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result
 
     let writer_pack_body = quote! {
         let #struct_name #match_fields = self;
-        let mut __msgpck_rs_n = 0usize;
+        let mut __msgpck_n = 0usize;
         #write_pack_fields
     };
 
     Ok(quote! {
         #[automatically_derived]
-        impl<#impl_generics> msgpck_rs::MsgPack for #struct_name<#struct_generics>
+        impl<#impl_generics> msgpck::MsgPack for #struct_name<#struct_generics>
         where #generic_bounds {
-            fn pack<'_msgpack>(&'_msgpack self) -> impl Iterator<Item = ::msgpck_rs::Piece<'_msgpack>> {
+            fn pack<'_msgpack>(&'_msgpack self) -> impl Iterator<Item = ::msgpck::Piece<'_msgpack>> {
                 #pack_body
             }
 
-            fn pack_with_writer(&self, __msgpck_rs_w: &mut dyn ::msgpck_rs::Write)
-                -> ::core::result::Result<usize, ::msgpck_rs::PackErr>
+            fn pack_with_writer(&self, __msgpck_w: &mut dyn ::msgpck::Write)
+                -> ::core::result::Result<usize, ::msgpck::PackErr>
             {
                 #writer_pack_body
-                Ok(__msgpck_rs_n)
+                Ok(__msgpck_n)
             }
         }
     })

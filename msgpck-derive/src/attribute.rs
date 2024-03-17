@@ -12,7 +12,7 @@ pub enum Attribute {
     Untagged,
 
     /// When unpacking an enum, an unknown discriminant/name will unpack as the variant tagged with
-    /// `#[msgpck_rs(other)]`. Same as `#[serde(other)]` Only allowed on a unit variant.
+    /// `#[msgpck(other)]`. Same as `#[serde(other)]` Only allowed on a unit variant.
     Other,
 
     /// If the value is not present when deserializing, use the `Default::default()`.
@@ -87,7 +87,7 @@ pub fn parse_attributes(
 ) -> syn::Result<HashSet<Attribute>> {
     let mut attributes = HashSet::new();
     for attr in attrs {
-        if !attr.path().is_ident("msgpck_rs") {
+        if !attr.path().is_ident("msgpck") {
             continue;
         }
 

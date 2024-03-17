@@ -87,14 +87,14 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
             if !matches!(variant.fields, Fields::Unit) {
                 return Err(syn::Error::new(
                     variant.fields.span(),
-                    "#[msgpck_rs(other)] must be applied to a unit variant",
+                    "#[msgpck(other)] must be applied to a unit variant",
                 ));
             }
 
             if other_variant.is_some() {
                 return Err(syn::Error::new(
                     variant.span(),
-                    "there can only be one variant marked #[msgpck_rs(other)]",
+                    "there can only be one variant marked #[msgpck(other)]",
                 ));
             }
 
@@ -152,7 +152,7 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
                     if field_attributes.contains(&Attribute::Default) {
                         return Err(syn::Error::new(
                             field.span(),
-                            "msgpck_rs(default) is not yet implemented for enum variant fields",
+                            "msgpck(default) is not yet implemented for enum variant fields",
                         ));
                     }
 
@@ -176,7 +176,7 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
                     if field_attributes.contains(&Attribute::Default) {
                         return Err(syn::Error::new(
                             field.span(),
-                            "msgpck_rs(default) is not yet implemented for enum variant fields",
+                            "msgpck(default) is not yet implemented for enum variant fields",
                         ));
                     }
 
@@ -216,13 +216,13 @@ pub fn derive_unpack_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<T
 
     Ok(quote! {
         #[automatically_derived]
-        impl<#impl_generics> ::msgpck_rs::MsgUnpack<'_msgpck> for #enum_name #ty_generics {
-            fn unpack(bytes: &mut &'_msgpck [u8]) -> Result<Self, ::msgpck_rs::UnpackErr>
+        impl<#impl_generics> ::msgpck::MsgUnpack<'_msgpck> for #enum_name #ty_generics {
+            fn unpack(bytes: &mut &'_msgpck [u8]) -> Result<Self, ::msgpck::UnpackErr>
             where
                 Self: Sized + '_msgpck,
             {
-                use ::msgpck_rs::{UnpackErr, Variant::*, MsgUnpack};
-                use ::msgpck_rs::helpers::{unpack_enum_header, unpack_array_header};
+                use ::msgpck::{UnpackErr, Variant::*, MsgUnpack};
+                use ::msgpck::helpers::{unpack_enum_header, unpack_array_header};
 
                 let header = unpack_enum_header(bytes)?;
 
