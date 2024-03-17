@@ -1,6 +1,10 @@
 [package]
 name = "msgpck"
 version = "0.2.8"
+description = "A no-std and async compatible msgpck de/serializer"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/technocreatives/msgpck"
+
 edition = "2021"
 rust-version = "1.75"
 
