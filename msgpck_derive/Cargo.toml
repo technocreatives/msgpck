@@ -1,5 +1,5 @@
 [package]
-name = "msgpck-derive"
+name = "msgpck_derive"
 version = "0.2.8"
 description = "Derive macro for `msgpck`"
 license = "Apache-2.0 OR MIT"

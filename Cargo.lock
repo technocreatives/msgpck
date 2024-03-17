@@ -92,12 +92,12 @@ version = "0.2.8"
 dependencies = [
  "heapless 0.7.16",
  "heapless 0.8.0",
- "msgpck-derive",
+ "msgpck_derive",
  "thiserror",
 ]
 
 [[package]]
-name = "msgpck-derive"
+name = "msgpck_derive"
 version = "0.2.8"
 dependencies = [
  "proc-macro2",

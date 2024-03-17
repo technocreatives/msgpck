@@ -1,11 +1,11 @@
 [workspace]
 members = [
 	"msgpck",
-	"msgpck-derive",
+	"msgpck_derive",
 ]
 
 exclude = [
-	"msgpck-tests",
+	"msgpck_tests",
 ]
 
 resolver = "2"

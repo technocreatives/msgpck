@@ -1,5 +1,5 @@
 [package]
-name = "msgpck-tests"
+name = "msgpck_tests"
 edition = "2021"
 publish = false
 

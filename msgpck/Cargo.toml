@@ -9,7 +9,7 @@ edition = "2021"
 rust-version = "1.75"
 
 [dependencies]
-msgpck-derive = { version = "0.2.8", path = "../msgpck-derive" }
+msgpck_derive = { version = "0.2.8", path = "../msgpck_derive" }
 thiserror = { version = "1.0.50", optional = true }
 heapless07 = { package = "heapless", version = "0.7.16", optional = true }
 heapless08 = { package = "heapless", version = "0.8.0", optional = true }
